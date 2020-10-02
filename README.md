@@ -27,14 +27,12 @@ This work is licensed under a
 
 ### To-do list
 
-* bug lignes 2748 - 2770 à régler
-* compléter le code avec blabla.Rmd
+* déroulé : tout le cours sur 3 * 3h, le dernier cours de 3h consacré au TP bayésien
+* bug lignes 3601 et suivantes et 3834 à régler
 * vérifier toutes les figures
-* regarder les trucs à faire dans les fichiers 2019 et 2020, faire les trucs importants
 * faire un lien vers mon cours de bayésien
 * intégrer les trucs sympas de mon cours de bayésien dans mon cours
 * supprimer les parties avec résidus et faire un renvoi vers un bouquin sympa, ou vignette DHARMA?
-* déroulé ; tout le cours sur 3 * 3h, le dernier cours de 3h consacré au TP bayésien
 * dans la partie modèles mixtes, mettre les figures avant les équations
 * faire un énoncé de TP pour le bayésien
 * expliquer comment on estime les effets aléatoires à partir de mu et sigma
