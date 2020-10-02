@@ -1,0 +1,818 @@
+---
+title: "Statistics for Ecologists"
+author: "Olivier Gimenez"
+date: "October 2020"
+output:
+  beamer_presentation:
+    fig_width: 6
+    fig_height: 4
+    latex_engine: xelatex
+  ioslides_presentation: default
+  slidy_presentation: default
+header-includes: \usetheme[titleformat=smallcaps, progressbar=frametitle]{metropolis}
+classoption: aspectratio=169
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE, 
+                      cache = TRUE,
+                      fig.width = 6, 
+                      fig.asp = 0.418,
+                      fig.align = "center",
+                      dpi = 300)
+library(tidyverse)
+theme_set(theme_light())
+```
+
+# Who's that guy?! 
+
+## Olivier Gimenez
+* Senior scientist at CNRS, in Montpellier - France. 
+* Trained as a statistician 
+* Soon attracted by the bright side of ecology 
+* Working at the interface of animal demography, statistical modelling and social sciences 
+* More on <https://oliviergimenez.github.io/>
+* Twitter @oaggimenez
+
+# Acknowledgments
+
+## Acknowledgments
+* Sean Anderson, Ben Bolker, Jason Matthiopoulos, David Miller, Denis Réale and Francisco Rodriguez-Sanchez for sharing their courses material
+
+# This Class 
+
+## Slides, R codes, data and practicals
+
+* I used `R`, and `RStudio` is your friend
+* I also used `R Markdown` to write reproducible documents (slides/exercises)
+* All material is available on GitHub <https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses>
+* Check out the files `gimenez_lectures.R` and `gimenez_practicals.R`
+* You will need the following R packages: `arm`, `bbmle`, `broom`, `dplyr`, `effects`, `lme4`, `mgcv`, `MuMIn`, `R2jags`, `tibble`, `visreg`
+
+
+## On our plate 
+* Distributions and likelihoods 
+* Hypothesis testing and multimodel inference 
+* Introduction to Bayesian inference 
+* Generalized Linear Models (GLMs) 
+* Generalized Additive Models (GAMs) 
+* Mixed Effect Models
+
+## On our plate 
+* \alert{Distributions and likelihoods} 
+* Hypothesis testing and multimodel inference 
+* Introduction to Bayesian inference 
+* Generalized Linear Models (GLMs) 
+* Generalized Additive Models (GAMs) 
+* Mixed Effect Models
+
+# Distributions and likelihoods 
+## Distributions
+
+* What for? 
+* Conceptual models, bearing in mind that:
+
+> All models are wrong, but some are useful (G.E.P. Cox, 1976)
+
+* Either represent how the world works
+* Or capture the behavior of a statistic under some null hypothesis we'd like to test
+* Discrete or continuous
+
+# Discrete distributions
+
+## Bernoulli distribution
+
+**Context**: A single trial with two outcomes, success/failure
+
+$X \sim \text{Bern}(p)$ with $p$ probability of having a success
+
+| $x$  | $P(X=x)$  | 
+|----+-----------| 
+| 1  | $p$ | 
+| 0  | $1-p$ |
+
+**Example**: $X$ is the random variable *being born a female*
+
+## Ten Bernoulli trials with $p=0.5$ 
+```{r, echo=FALSE} 
+set.seed(1975)
+rbinom(10,1,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+```
+
+## Ten Bernoulli trials with $p=0.5$, again 
+```{r, echo=FALSE} 
+set.seed(1979)
+rbinom(10,1,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+```
+
+## Hundred Bernoulli trials with $p=0.5$ 
+```{r, echo=FALSE} 
+rbinom(100,1,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+```
+
+## Hundred Bernoulli trials with $p=0.2$ 
+```{r, echo=FALSE} 
+rbinom(100,1,0.2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+```
+
+## Hundred Bernoulli trials with $p=0.8$ 
+```{r, echo=FALSE} 
+rbinom(100,1,0.8) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+```
+
+## Summary: Bernoulli distribution 
+* **notation**: $X \sim \text{Bern}(p)$ 
+* **range**: discrete, $x = 0, 1$ 
+* **distribution**: $P(X=x) = p^x (1-p)^{1-x}$ 
+* **parameters**: $p$ is the probability of success 
+* **mean**: $p$ 
+* **variance**: $p(1-p)$
+
+
+## Binomial distribution
+
+**Context**: Total number of successes from a fixed number of independent Bernoulli trials, all with same probability of success
+
+$X \sim \text{Bin}(N,p)$ with $p$ probability of having a success and $N$ number of trials
+
+$$P(X=x) = {{N!}\over{x!(N-x)!}}p^x(1-p)^{N-x} = \binom{N}{x}p^x(1-p)^{N-x}$$
+
+**Example**: $X$ is the random variable *number of heads in a series of coin flipping*
+
+## Binomial distribution
+
+$$P(X=x) = \binom{N}{x}p^x(1-p)^{N-x}$$
+
+| $x$  | $P(X=x)$  | 
+|----+-----------| 
+| 0  | $(1-p)^N$ | 
+| 1  | $Np(1-p)^{N-1}$ |
+| ...  | ... |
+| N  | $p^N$ |
+
+## Binomial distribution
+
+| $x$  | $P(X=x)$  | 
+|----+-----------| 
+| 0  | $(1-p)^N$ | 
+| 1  | $Np(1-p)^{N-1}$ |
+| ...  | ... |
+| N  | $p^N$ |
+
+Fortunately, ```R``` has this pre-programmed 
+```{r,collapse=TRUE}
+dbinom(x = 1, size = 10, prob = 0.5) # equals 10*0.5*(1-0.5)^(10-1)
+```
+
+## Hundred Binomial trials with $N=10$ and $p=0.5$ 
+```{r, echo=FALSE} 
+rbinom(100,10,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+```
+
+## Hundred Binomial trials with $N=10$ and $p=0.5$, again 
+```{r, echo=FALSE} 
+rbinom(100,10,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+```
+
+## Hundred Binomial trials with $N=10$ and $p=0.2$ 
+```{r, echo=FALSE} 
+rbinom(100,10,0.2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+```
+
+## Hundred Binomial trials with $N=10$ and $p=0.8$ 
+```{r, echo=FALSE} 
+rbinom(100,10,0.8) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+```
+
+## Playing around with probabilities 
+\begin{itemize}[<+- | alert@+>]
+\item Let's say $X \sim \text{Bin}(N=10,p=0.5)$ is a random variable counting the number of males
+\item What is the probability of having at most 2 males?
+  \item $P(X \leq 2) = P(X=0) + P(X=1)$
+  \item How to compute this in R?
+  \item dbinom(x=0,size=10,prob=0.5) + dbinom(x=1,size=10,prob=0.5)
+\end{itemize}
+
+
+## Summary: Binomial distribution 
+* **notation**: $X \sim \text{Bin}(N,p)$ 
+  * **range**: discrete, $0 \leq x \leq N$ 
+  * **distribution**: $P(X=x) = \binom{N}{x}p^x (1-p)^{1-x}$ 
+  * **parameters**: $p$ the probability of success, and $N$ the number of trials 
+* **mean**: $Np$ 
+  * **variance**: $Np(1-p)$ 
+  * **in R**: ```rbinom```, ```dbinom```
+
+
+## Poisson distribution
+
+**Context**: Number of occurrences of an event over a given unit of space or time. 
+
+$X \sim \text{Poisson}(\lambda)$ with $\lambda$ expected number of occurrences
+
+$$P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$$
+  
+**Example**: $X$ is the random variable *number of birds counted on a colony during the breeding season*
+  
+  
+## Poisson distribution
+  
+  $$P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$$
+  
+  | $x$  | $P(X=x)$  | 
+  |----+-----------| 
+  | 0  | $e^{-\lambda}$ | 
+  | 1  | $\lambda e^{-\lambda}$ |
+  | ...  | ... |
+  
+## Poisson distribution
+  
+  | $x$  | $P(X=x)$  | 
+  |----+-----------| 
+  | 0  | $e^{-\lambda}$ | 
+  | 1  | $\lambda e^{-\lambda}$ |
+  | ...  | ... |
+  
+Fortunately, ```R``` has this pre-programmed 
+```{r,collapse=TRUE}
+dpois(x=0,lambda=3) # equals exp(-3)
+```
+
+## Hundred Poisson trials with $\lambda=1$ 
+```{r, echo=FALSE} 
+rpois(n = 100, lambda = 1) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(direction = -1, palette = "PuOr") +
+  theme(legend.position = "none")
+```
+
+## Hundred Poisson trials with $\lambda=2$ 
+```{r, echo=FALSE} 
+rpois(n = 100, lambda = 2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(direction = -1, palette = "PuOr") +
+  theme(legend.position = "none")
+```
+
+## Hundred Poisson trials with $\lambda=10$ 
+```{r, echo=FALSE} 
+rpois(n = 100, lambda = 10) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
+```
+
+## Thousand Poisson trials with $\lambda=10$ 
+```{r, echo=FALSE} 
+rpois(n = 1000, lambda = 10) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
+```
+
+## Summary: Poisson distribution 
+* **notation**: $X \sim \text{Poisson}(\lambda)$ 
+  * **range**: discrete, $x \geq 0$ 
+  * **distribution**: $P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$ 
+  * **parameters**: $\lambda$ the rate or expected number per sample
+* **mean**: $\lambda$ 
+  * **variance**: $\lambda$ 
+  * **in R**: ```rpois```, ```dpois```
+
+# Continuous distribution
+
+## Normal (Gaussian) distribution
+
+**Context**: Distribution of “adding lots of things together”. Derived from *Central Limit Theorem*, which says that if you add a large number of independent samples from the same distribution the distribution of the sum
+will be approximately normal.
+
+$X \sim \text{Normal}(\mu,\sigma^2)$ where $\mu$ is the mean and $\sigma^2$ the variance
+
+$$f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}} \right)$$
+  
+  **Example**: Practically everything.
+
+## Normal probability density function 
+```{r, echo=FALSE, fig.asp=0.618} 
+min.x <- -5
+max.x <- 5
+num.samples <- 1000
+x <- seq(from = min.x, to = max.x, length = num.samples)
+# Open new blank plot with x limits from -5 to 5, and y limits from 0 to 1
+plot(c(-5, 5), c(0, 1), xlab = 'x', ylab = 'f(x)', main = "", type = "n")
+# Add each density plot one at a time
+lines(x, dnorm(x, mean = 0, sd = 0.5), lwd = 3, col = 'red')
+lines(x, dnorm(x, mean = 0, sd = 1), lwd = 3, col = 'green')
+lines(x, dnorm(x, mean = 0, sd = 2), lwd =3, col = 'blue')
+lines(x, dnorm(x, mean = -2, sd = 1), lwd = 3, col = 'magenta')
+# We can also add a legend to the plot  
+legend("topright", 
+       c("mu=0, sigma=0.5", "mu=0, sigma=1", "mu=0, sigma=2", "mu=-2, sigma=1"), 
+       col = c('red','green','blue','magenta'),
+       lty = 1,
+       lwd = 3)
+```
+
+## Summary: Normal distribution 
+* **notation**: $X \sim \text{N}(\mu,\sigma^2)$ 
+  * **range**: continuous, all real values 
+* **distribution**: $f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}} \right)$ 
+  * **parameters**: $\mu$ the mean and $\sigma$ the standard deviation
+* **mean**: $\mu$ 
+  * **variance**: $\sigma^2$ 
+  * **in R**: ```rnorm```, ```dnorm```
+
+## Why do we love the Normal distribution 
+
+* If has nice properties, such as: if $X \sim \text{N}(\mu,\sigma^2)$, then $Z = \displaystyle{{{X - \mu}\over{\sigma}} \sim \text{N}(0,1)}$
+  
+* It is a limiting distribution (*Central Limit Theorem*)
+
+* It can be a good approximation for other distributions
+
+
+## Example: Approximating Binomial by Normal (1)
+
+$X \sim \text{Bin}(N=50,p=0.3)$
+  
+Mean is $Np = 50 \times 0.3 = 15$
+  
+Variance is $Np(1-p) = 50 \times 0.3 \times 0.7 = 10.5$
+  
+Therefore, $X$ can be approximated by $Y \sim \text{N}(15,\sigma=\sqrt{10.5})$
+  
+
+## Example: Approximating Binomial by Normal (2)
+  
+```{r, echo=FALSE, fig.asp=0.618} 
+n<-50
+p<-0.3
+f<-hist(rbinom(100000, n,p), freq=FALSE, breaks=n/2,main="", xlab="x")
+x<-f$breaks
+lines(x,dnorm(x,n*p,sqrt(n*p*(1-p))),col='red',lwd=3)
+abline(v=15,lwd=2,col='blue',lty=2)
+```
+
+# Conclusions about distributions
+
+## Common Distributions - Discrete
+
+* When we have something that is dichotomous (either 0 or 1, negative/positive, false/true, male/female, present/absent):
+  
+$$\text{Binomial(number of trials, probability)}$$
+  
+* When we have something that is a discrete count, with no theoretical maximum, but with a common average:
+  
+$$\text{Poisson(lambda)}$$
+  
+## Common Distributions - Discrete
+  
+* When we are recording the number of *failures* before a number of *successes*, or when we have something that is a discrete count with no theoretical maximum, and with more variation than Poisson:
+  
+$$\text{NegativeBinomial(number of successes, probability of success)}$$
+$$\text{NegativeBinomial(mean, overdispersion)}$$
+  
+## Common Distributions - Continuous
+  
+* When we have something that is continuous, symmetrical about the mean and unbounded:
+  
+$$\text{Normal(mean, standard deviation)}$$
+  
+* When we have something that is continuous, not symmetrical, and bounded at zero:
+  
+$$\text{Exponential(rate)}$$
+  
+$$\text{Gamma(shape, rate)}$$
+  
+## Common Distributions - Continuous
+  
+* When we have something that is continuous, not symmetrical, and bounded at zero:
+  
+$$\text{Lognormal(logmean, logstdev)}$$
+  
+* When we have something that is continuous, and bounded between 0 and 1:
+  
+$$\text{Beta(alpha, beta)}$$
+  
+* Simple bounded distribution:
+  
+$$\text{Uniform(min, max)}$$
+  
+## More? Check out in R:
+```{r}
+?Distributions
+```
+
+# Likelihoods
+
+## Fitting distributions to data
+
+* So far, when talking about probability distributions, we assumed that we
+knew the parameter values
+
+* And we wanted to know what data we might get from these distributions
+
+* In the real world, it is usually the other way around
+
+* A more relevant question might be:
+  
+> We have observed 3 births by a female during her 10 breeding
+attempts. What does this tell us about the true probability of
+getting a successful breeding attempt from this female? For the population?
+  
+## Fitting distributions to data
+  
+We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+values:
+  
+```{r,collapse=TRUE}
+dbinom(x = 3, size = 10, prob = 0.1)
+```
+
+## Fitting distributions to data
+
+We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+values:
+  
+```{r,collapse=TRUE}
+dbinom(x=3,size=10,prob=0.9)
+```
+
+## Fitting distributions to data
+
+We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+values:
+  
+```{r,collapse=TRUE}
+dbinom(x=3,size=10,prob=0.25)
+```
+
+So we would be more likely to observe 3 births if the probability is
+0.25 than 0.1 or 0.9
+
+## The likelihood
+
+* This reasoning is so common in statistics that it has a special name:
+  
+* \alert{The likelihood} is the probability of observing the data under a certain model
+
+* The data are known, we usually consider the likelihood as a function of the model parameters $\theta_1,\theta_2, \ldots, \theta_p$
+  
+$$L = P(\theta_1,\theta_2, \ldots, \theta_p \mid \text{data})$$
+  
+* This is a very important concept
+
+## Likelihood functions
+
+We may create a function to calculate a likelihood e.g.:
+  
+```{r,collapse=TRUE}
+lik.fun <- function(parameter){
+  ll <- dbinom(x=3, size=10, prob=parameter)
+  return(ll)
+}
+
+lik.fun(0.3)
+
+lik.fun(0.6)
+```
+
+## Maximize the likelihood (3 successes ot of 10 attempts)
+
+```{r, echo=FALSE}
+lik.fun <- function(parameter){
+  ll <- dbinom(x=3, size=10, prob=parameter)
+  return(ll)
+}
+p.grid = seq(0,1,by=0.01)
+lik = rep(NA,length(p.grid))
+for (i in 1:length(p.grid)){
+  lik[i] <- lik.fun(p.grid[i])
+}
+plot(p.grid, lik, 
+     xlab = 'prob. of getting a successful breeding attempt',
+     ylab = 'likelihood',
+     type = 'l',
+     lwd = 3)
+abline(v = 0.3,
+       lty = 2,
+       lwd = 2,
+       col = 'blue')
+```
+
+The *maximum* of the likelihood is at value $0.3$
+  
+## The Maximum Likelihood
+  
+* There is always a set of parameters that gives you the highest likelihood of observing the data: the \alert{Maximum Likelihood Estimate(s) [MLEs]}
+
+* This can be calculated using:
+  
++ Trial and error (not efficient!)
++ Compute the maximum of a function by hand (rarely doable in practice)
++ An iterative optimization algorithm: `?optimize` ($1$ parameter) and `?optim` ($> 1$ parameter) in `R`
+
+## \alert{By hand}: compute MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+
+$P(Y=k) = {{k}\choose{N}} p^k (1-p)^{N-k} = L(p)$
+  
+$\log(L(p)) = \text{cte} + k \log(p) + (N-k) \log(1-p)$
+  
+We are searching for the maximum of $L$, or equivalently that of $\log(L)$
+  
+Compute derivate w.r.t. $p$: $\displaystyle{{{d\log(L)}\over{dp}} = {{k}\over{p}} – {{(N-k)}\over{(1-p)}}}$
+  
+Then solve $\displaystyle{{{d\log(L)}\over{dp}}=0}$; the MLE is $\displaystyle{\hat{p} = {{k}\over{N}}={{3}\over{10}}=0.3}$
+  
+Here, the MLE is the proportion of observed successes
+
+## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+
+```{r,collapse=TRUE}
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
+# ?optimize
+optimize(lik.fun,c(0,1),maximum=TRUE)
+```
+
+Use `optim` when the number of parameters is $> 1$.
+
+## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+
+```{r, echo=FALSE, fig.asp=0.618}
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
+plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="Binomial likelihood with 3 successes ot of 10 attempts",lwd=3)
+abline(v=0.3,h=0.26682,col='blue',lty=2,lwd=2)
+```
+
+## The Maximum Likelihood Estimate (MLE)
+
+* \alert{The MLE is the best guess set of parameter values for our given data}
+
+## A dart target, with the red cross representing the true parameter value
+
+```{r echo = FALSE, fig.asp=0.7}
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Imprecise and biased')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.3,0.5),runif(1,2,6.5),col='blue',cex=1,pch=19)
+}
+```
+
+## A dart target, with the red cross representing the true parameter value
+
+```{r echo = FALSE, fig.asp=0.7}
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Precise but biased')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,0.3,0.5),runif(1,3.5,5.5),col='blue',cex=1,pch=19)
+}
+```
+
+## A dart target, with the red cross representing the true parameter value
+
+```{r echo = FALSE, fig.asp=0.7}
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased but imprecise')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.3,0.3),runif(1,-3.5,3.5),col='blue',cex=1,pch=19)
+}
+```
+
+## A dart target, with the red cross representing the true parameter value
+
+```{r echo = FALSE, fig.asp=0.7}
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased and precise!')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.15,0.15),runif(1,-1.5,1.5),col='blue',cex=1,pch=19)
+}
+```
+
+<!-- ## A dart target, with the red cross representing the true parameter value -->
+
+<!-- ```{r message=FALSE, warning=FALSE, include=FALSE, paged.print=FALSE} -->
+<!-- library(plotrix) -->
+<!-- png("plot1.png", width = 4, height = 4, units = 'in', res = 300) -->
+<!-- plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Imprecise and biased') -->
+<!-- draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black') -->
+<!-- points(0,0,col='red',cex=2,pch=4) -->
+<!-- for (i in 1:35){ -->
+<!--   points(runif(1,-0.3,0.5),runif(1,2,6.5),col='blue',cex=1,pch=19) -->
+<!-- } -->
+<!-- dev.off() -->
+
+<!-- png("plot2.png", width = 4, height = 4, units = 'in', res = 300) -->
+<!-- plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Precise but biased') -->
+<!-- draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black') -->
+<!-- points(0,0,col='red',cex=2,pch=4) -->
+<!-- for (i in 1:35){ -->
+<!--   points(runif(1,0.3,0.5),runif(1,3.5,5.5),col='blue',cex=1,pch=19) -->
+<!-- } -->
+<!-- dev.off() -->
+
+<!-- png("plot3.png", width = 4, height = 4, units = 'in', res = 300) -->
+<!-- plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased but imprecise') -->
+<!-- draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black') -->
+<!-- points(0,0,col='red',cex=2,pch=4) -->
+<!-- for (i in 1:35){ -->
+<!--   points(runif(1,-0.3,0.3),runif(1,-3.5,3.5),col='blue',cex=1,pch=19) -->
+<!-- } -->
+<!-- dev.off() -->
+
+
+<!-- png("plot4.png", width = 4, height = 4, units = 'in', res = 300) -->
+<!-- plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased and precise!') -->
+<!-- draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black') -->
+<!-- draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black') -->
+<!-- points(0,0,col='red',cex=2,pch=4) -->
+<!-- for (i in 1:35){ -->
+<!--   points(runif(1,-0.15,0.15),runif(1,-1.5,1.5),col='blue',cex=1,pch=19) -->
+<!-- } -->
+<!-- dev.off() -->
+<!-- ``` -->
+
+<!-- ## A dart target, with the red cross representing the true parameter value -->
+
+<!-- ```{r echo=FALSE, message=FALSE, warning=FALSE, paged.print=FALSE} -->
+<!-- library(png) -->
+<!-- library(grid) -->
+<!-- library(gridExtra) -->
+
+<!-- plot1 <- readPNG('plot1.png') -->
+<!-- plot2 <- readPNG('plot2.png') -->
+<!-- plot3 <- readPNG('plot3.png') -->
+<!-- plot4 <- readPNG('plot4.png') -->
+
+<!-- grid.arrange(rasterGrob(plot1), -->
+<!--              rasterGrob(plot2), -->
+<!--              rasterGrob(plot3), -->
+<!--              rasterGrob(plot4),ncol=2) -->
+<!-- ``` -->
+
+## The Maximum Likelihood Estimate (MLE)
+
+* The MLE is the best guess set of parameter values for our given data
+
+* \alert{But the chances of the true parameter values being close to the MLE is dependent on the amount of information in the data!}
+
+## Binomial likelihood with increasing sample size
+
+```{r, echo=FALSE, fig.asp = 0.618}
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="",lwd=3)
+lik.fun <- function(parameter) dbinom(x=30, size=100, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,add=T,col='blue',lwd=3)
+lik.fun <- function(parameter) dbinom(x=300, size=1000, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,add=T,col='red',lwd=3)
+abline(v=0.3,col='grey',lty=2)
+legend('bottomright',c('3 out of 10','30 out of 100','300 out of 1000'), col=c('black','blue','red'),lty=1,lwd=2)
+```
+
+# Confidence intervals: A refresher
+
+## Let's approach confidence intervals through simulations
+
+```{r, message=FALSE, warning=FALSE, include=FALSE}
+library(dplyr)
+library(ggplot2)
+set.seed(12345) # try different values
+```
+
+Imagine you are measuring the temperature of a cup of water 10 times but you have an old really bad thermometer. 
+The true temperature is 3 degrees Celsius and the standard deviation on the sampling error is 5.
+
+```{r, message=FALSE, warning=FALSE}
+# Simulate data:
+mu <- 3
+sigma <- 5
+n <- 10
+y <- rnorm(n = n, mean = mu, sd = sigma)
+y
+```
+
+## Apply linear regression
+
+We will estimate a mean temperature by fitting an intercept only linear regression model:
+  
+```{r, message=FALSE, warning=FALSE,collapse=TRUE}
+m <- lm(y~1)
+broom::tidy(m)
+
+confint(m)
+```
+
+
