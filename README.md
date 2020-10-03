@@ -29,7 +29,7 @@ This work is licensed under a
 
 * déroulé : tout le cours sur 3 * 3h, le dernier cours de 3h consacré au TP bayésien
 * ajouter les practicals
-* faire sauter les GAMs et renvoyer plutôt sur le cours de David Miller avec exemple dolphins
+* ~~faire sauter les GAMs et renvoyer plutôt sur le cours de David Miller avec exemple dolphins~~
 * ~~bug lignes 3601 et suivantes et 3834 à régler~~
 * ~~supprimer les parties avec résidus et faire un renvoi vers un bouquin sympa, ou vignette DHARMA?~~
 * ~~charger package en global et supprimer tous les package::function~~
