@@ -4,28 +4,42 @@ author: "Olivier Gimenez"
 date: "October 2020"
 output:
   beamer_presentation:
-    fig_width: 6
-    fig_height: 4
-    latex_engine: xelatex
+    fig_caption: no
+    includes:
+      in_header: header.tex
+    latex_engine: pdflatex
+    slide_level: 2
+    theme: metropolis
   ioslides_presentation: default
-  slidy_presentation: default
-header-includes: \usetheme[titleformat=smallcaps, progressbar=frametitle]{metropolis}
 classoption: aspectratio=169
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, 
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(cache = TRUE, 
+                      echo = TRUE, 
                       message = FALSE, 
-                      warning = FALSE, 
-                      cache = TRUE,
-                      fig.width = 6, 
-                      fig.asp = 0.418,
+                      warning = FALSE,
+                      fig.height=6, 
+                      fig.width = 1.777777*6,
                       fig.align = "center",
-                      dpi = 300)
+                      tidy = FALSE, 
+                      comment = NA, 
+                      highlight = TRUE, 
+                      prompt = FALSE, 
+                      crop = TRUE,
+                      comment = "#>",
+                      collapse = TRUE)
+knitr::opts_knit$set(width = 60)
+library(reshape2)
 library(tidyverse)
+theme_set(theme_light(base_size = 16))
+make_latex_decorator <- function(output, otherwise) {
+  function() {
+      if (knitr:::is_latex_output()) output else otherwise
+  }
+}
 theme_set(theme_light())
 library(mgcv)
-library(reshape2)
 library(R2jags)
 library(broom)
 ```
@@ -100,14 +114,14 @@ $X \sim \text{Bern}(p)$ with $p$ probability of having a success
 **Example**: $X$ is the random variable *being born a female*
 
 ## Ten Bernoulli trials with $p=0.5$ 
-```{r, echo=FALSE} 
-set.seed(1975)
-rbinom(10,1,0.5) %>% 
+
+```{r, echo=FALSE}
+data.frame(value = rbinom(10,1,0.5)) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
-  count(levels) %>%
-  ggplot(aes(x = levels, y = n)) +
+  mutate(value = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n)) +
   geom_col(fill = "#009E73", color = "black") +
   labs(x = "", y = "")
 ```
@@ -119,7 +133,7 @@ rbinom(10,1,0.5) %>%
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
   mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
-  count(levels) %>%
+  dplyr::count(levels) %>%
   ggplot(aes(x = levels, y = n)) +
   geom_col(fill = "#009E73", color = "black") +
   labs(x = "", y = "")
@@ -131,7 +145,7 @@ rbinom(100,1,0.5) %>%
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
   mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
-  count(levels) %>%
+  dplyr::count(levels) %>%
   ggplot(aes(x = levels, y = n)) +
   geom_col(fill = "#009E73", color = "black") +
   labs(x = "", y = "")
@@ -143,7 +157,7 @@ rbinom(100,1,0.2) %>%
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
   mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
-  count(levels) %>%
+  dplyr::count(levels) %>%
   ggplot(aes(x = levels, y = n)) +
   geom_col(fill = "#009E73", color = "black") +
   labs(x = "", y = "")
@@ -155,7 +169,7 @@ rbinom(100,1,0.8) %>%
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
   mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
-  count(levels) %>%
+  dplyr::count(levels) %>%
   ggplot(aes(x = levels, y = n)) +
   geom_col(fill = "#009E73", color = "black") +
   labs(x = "", y = "")
@@ -210,7 +224,7 @@ dbinom(x = 1, size = 10, prob = 0.5) # equals 10*0.5*(1-0.5)^(10-1)
 rbinom(100,10,0.5) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -223,7 +237,7 @@ rbinom(100,10,0.5) %>%
 rbinom(100,10,0.5) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -236,7 +250,7 @@ rbinom(100,10,0.5) %>%
 rbinom(100,10,0.2) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -249,7 +263,7 @@ rbinom(100,10,0.2) %>%
 rbinom(100,10,0.8) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -316,7 +330,7 @@ dpois(x=0,lambda=3) # equals exp(-3)
 rpois(n = 100, lambda = 1) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -329,7 +343,7 @@ rpois(n = 100, lambda = 1) %>%
 rpois(n = 100, lambda = 2) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -342,7 +356,7 @@ rpois(n = 100, lambda = 2) %>%
 rpois(n = 100, lambda = 10) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -354,7 +368,7 @@ rpois(n = 100, lambda = 10) %>%
 rpois(n = 1000, lambda = 10) %>% 
   as_tibble() %>%
   mutate(value = as_factor(value)) %>%
-  count(value) %>%
+  dplyr::count(value) %>%
   ggplot(aes(x = value, y = n, fill = value)) +
   geom_col() +
   labs(x = "", y = "") +
@@ -1480,7 +1494,9 @@ knitr::include_graphics('img/maniac.png')
 
 * Summarize posterior distribution with mean, sd and credible intervals
 
-```{r, out.width = '8cm',out.height='6cm',echo=FALSE}
+## In practice, when is equilibrium attained?
+
+```{r, out.width = '10cm',out.height='6cm',echo=FALSE}
 knitr::include_graphics('img/mcmc.png')   
 ```
 
@@ -1489,7 +1505,7 @@ knitr::include_graphics('img/mcmc.png')
 \begin{center}
 Martyn Plummer
 \end{center}
-```{r, out.width = '4cm',out.height='5cm',fig.align='center',echo=FALSE}
+```{r, out.width = '5cm',out.height='5cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/plummer.png') 
 ```
 
@@ -1808,7 +1824,7 @@ CJS.sim.apriori <-jags(data=datax, inits=list(init1,init2), parameters,n.iter=10
 ## Case study
 
 * European dippers in Eastern France (1981-1987)
-```{r, out.width = '4cm',out.height='3cm',echo=FALSE}
+```{r, out.width = '3cm',out.height='4cm',echo=FALSE}
 knitr::include_graphics('img/dipper.png')    
 ```
 
@@ -1846,7 +1862,7 @@ knitr::include_graphics('img/dipper.png')
 
 ## Compare \textcolor{blue}{vague} vs. \textcolor{red}{informative} prior
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.asp=0.5}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.asp=0.55}
 res = as.mcmc(CJS.sim.wo.apriori) 
 res = rbind(res[[1]],res[[2]]) 
 #head(res)
@@ -2020,18 +2036,22 @@ titanic %>%
 ```
 
 ## Back to survival of Titanic passengers (package `dplyr`)
+
 Arrange passenger survival according to class
-```{r titanic_dplyr, message=FALSE, warning=FALSE, collapse=TRUE, size='tinysize',echo=FALSE}
+```{r, message=FALSE, collapse=TRUE, size='tinysize',echo=FALSE}
 library(dplyr)
 titanic %>%
-  group_by(class, survived) %>%
-  summarise(count = n())
+  dplyr::count(class, survived, sort = TRUE)
 ```
 
 ## Or graphically...
 
-```{r, echo=TRUE, fig.asp = 0.55}
-plot(factor(survived) ~ class, data = titanic)
+```{r, fig.asp = 0.5, echo = FALSE}
+titanic %>%
+  mutate(survived = as_factor(survived)) %>%
+  dplyr::count(class, survived) %>%
+  ggplot(aes(x = class, y = n, fill = survived)) +
+  geom_col()
 ```
 
 
@@ -2116,7 +2136,11 @@ plot(allEffects(titanic.glm))
 ## Plot first
 
 ```{r, fig.asp = 0.5}
-plot(factor(survived) ~ sex, data = titanic)
+titanic %>%
+  mutate(survived = as_factor(survived)) %>%
+  dplyr::count(sex, survived) %>%
+  ggplot(aes(x = sex, y = n, fill = survived)) +
+  geom_col()
 ```
 
 ## Fit model
@@ -2302,7 +2326,7 @@ points(mortality/1000 ~ gdp, data = un)
 
 ## Testing for overdispersion (with `DHARMa` package)
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r, echo=TRUE, fig.asp = 0.45}
 testOverdispersion(simulateResiduals(gdp.glm, refit = TRUE))
 ```
 
@@ -2527,7 +2551,7 @@ knitr::include_graphics('img/textbooks3.png')
 
 ## Textbooks
 
-```{r, out.width = '9cm',out.height='7cm',fig.align='center',echo=FALSE}
+```{r, out.width = '6cm',out.height='7cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/textbooks4.png')
 ```
 
@@ -2568,7 +2592,7 @@ knitr::include_graphics('img/textbooks4.png')
 knitr::include_graphics('img/pdm.png')    
 ```
 
-By Eleni Kazakou, former Master student / Post-doc of the University of the Aegean
+Courtesy of  Eleni Kazakou.
 
 ## Plant example, universality of the allometric relationship?
 ```{r, message=FALSE, warning=FALSE, include=FALSE}
@@ -2594,7 +2618,7 @@ nbspecies = length(levels(Sp)) # ou bien length(unique(species))
 # nombre de mesures
 n = length(y)
 ```
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width = '12cm',out.height='7cm'}
+```{r, echo=FALSE, fig.width = 6, fig.height = 8, fig.asp = 0.5}
 # graphical representation
 library(lattice)
 dat = data.frame(Biomass=x,nb_grain=y,Species=Sp)
@@ -2679,7 +2703,7 @@ tidy(allom.lm)
 
 Fit \alert{one} linear model, with no distinction of species: \alert{complete pooling}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width = '12cm',out.height='7cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 grid = seq(min(dat$Biomass),max(dat$Biomass),length=100)
 fitted = coef(allom.lm)[1] + coef(allom.lm)[2] * grid
 plot(grid,fitted,xlab='biomass',ylab='nb_grain',main='',type='l',lwd=3,col='red',xlim=c(0,40),ylim=c(0,11))
@@ -2742,7 +2766,7 @@ allom.lmm3
 
 ## 'Old school' linear models, complete pooling vs. no pooling
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='12cm',out.height='7cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 df_no_pooling <- lmList(nb_grain ~ Biomass | Species, dat) %>% 
   coef() %>% 
   rownames_to_column("Species") %>% 
@@ -2786,7 +2810,7 @@ p_model_comparison
 
 ## Linear \alert{mixed} model, with species as a random effect on the \alert{intercept}
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='12cm',out.height='7cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 m <- lmer (nb_grain ~ Biomass + (1 | Species),dat)
 # Make a dataframe with the fitted effects
 df_partial_pooling <- coef(m)[["Species"]] %>% 
@@ -2807,7 +2831,7 @@ p_model_comparison %+% df_models
 
 ## Let's zoom in
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='12cm',out.height='7cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 df_zoom <- df_models %>% 
   filter(Species %in% c("AVEBAR", "EROCIC", "ARIROT", "CONSUM"))
 p_model_comparison %+% df_zoom
@@ -2838,17 +2862,17 @@ $$\sigma \sim \text{Uniform}(0,100)$$
 VMG <- read.table("dat/VMG.csv", header=TRUE, dec= ".", sep =";")
 VMG$Sp <- as.factor(VMG$Sp)
 # nb of seeds (log)
-y=log(VMG$NGrTotest)
+y <- log(VMG$NGrTotest)
 # biomass
-x=VMG$Vm
+x <- VMG$Vm
 # species name
-Sp=VMG$Sp
+Sp <- VMG$Sp
 # species label
-species = as.numeric(Sp)
+species <- as.numeric(Sp)
 # species name
-nbspecies = length(levels(Sp))
+nbspecies <- length(levels(Sp))
 # total nb of measurements 
-n = length(y)
+n <- length(y)
 ```
 
 ## Implement the model in Jags
@@ -2901,7 +2925,7 @@ allom.1
 
 ## Output
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, fig.asp = 0.6}
 library(lattice)
 xyplot(y ~ x | Sp,
        xlab = "Biomass", ylab = "Nb seeds",main="complete pooling (no species effect)",
@@ -2998,7 +3022,7 @@ hat2 <- ylinear # pooling model (no species effect) fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying-intercept}
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, fig.asp = 0.6}
 # build a multipanel plot
 xyplot(y ~ x | Sp, panel=panelfun2,
        xlab="biomass",
@@ -3089,7 +3113,7 @@ hat3 <- yfit2 # varying-intercept varying-slope fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying intercept} vs \textcolor{blue}{varying intercept and slope}
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, fig.asp = 0.6}
 xyplot(y ~ x | Sp, panel=panelfun2,
        xlab="biomass",
        ylab="nb graines",
@@ -3154,15 +3178,13 @@ $$
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 m <- glmer(cbind(nbchicks,nbpairs-nbchicks) ~ temp + rainfall 
                              + (1 | year), family = binomial)
-m
 ```
 
-## Plotting effects of model predictors
+## GLMM on proportions with year as a random effect in R
 
-<!-- ```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='10cm',out.height='6cm'} -->
-<!-- library(sjPlot)	 -->
-<!-- p <- sjp.glmer(m, type = "eff", show.ci = TRUE) -->
-<!-- ``` -->
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
+m
+```
 
 ## Yearly random intercepts
 
@@ -3172,7 +3194,7 @@ dotplot(ranef(m,condVar=TRUE))
 
 ## Calculate proportion of explained variance in GLMMs
 
-```{r, out.width = '14cm',out.height='12cm',fig.align='center',echo=FALSE}
+```{r, out.width = '8cm',out.height='10cm',echo=FALSE}
 knitr::include_graphics('img/r2glmm.png')    
 ```
 
@@ -3188,7 +3210,7 @@ dat[,1] = as.factor(dat[,1])
 
 ## Weight of offspring per female as a function of gestation duration
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='10cm',out.height='6cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 library(lattice)
 xyplot(offspring_weight ~ gestation | female_id,data=dat,xlab='duration of gestation (days)',ylab='offspring weight (g)')
 #plot(dat$GESTATION,dat$POIDS,xlab='gestation',ylab='poids')
@@ -3197,7 +3219,7 @@ library(lme4)
 
 ## Weight of offspring per year as a function of gestation duration
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='10cm',out.height='6cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 library(lattice)
 xyplot(offspring_weight ~ gestation | as.factor(year),data=dat,xlab='duration of gestation (days)',ylab='offspring weight (g)')
 #plot(dat$GESTATION,dat$POIDS,xlab='gestation',ylab='poids')
@@ -3249,7 +3271,7 @@ AIC(m1,m1_gamm)
 
 ## Plotting
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='10cm',out.height='6cm'}
+```{r, echo=FALSE, fig.asp = 0.6}
 newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2010',female_id='1',dum=0)
 pred2025 <- predict.gam(m1_gamm,newd)
 newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2011',female_id='1',dum=0)
