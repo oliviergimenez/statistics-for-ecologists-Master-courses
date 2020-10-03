@@ -28,11 +28,13 @@ This work is licensed under a
 ### To-do list
 
 * déroulé : tout le cours sur 3 * 3h, le dernier cours de 3h consacré au TP bayésien
-* bug lignes 3601 et suivantes et 3834 à régler
+* ~~bug lignes 3601 et suivantes et 3834 à régler~~
+* ~~supprimer les parties avec résidus et faire un renvoi vers un bouquin sympa, ou vignette DHARMA?~~
+* ~~charger package en global et supprimer tous les package::function~~
 * vérifier toutes les figures
-* faire un lien vers mon cours de bayésien
+* renvoyer vers mon cours de bayésien
+* fix terminology pooled, varying-intercept, etc
 * intégrer les trucs sympas de mon cours de bayésien dans mon cours
-* supprimer les parties avec résidus et faire un renvoi vers un bouquin sympa, ou vignette DHARMA?
 * dans la partie modèles mixtes, mettre les figures avant les équations
 * faire un énoncé de TP pour le bayésien
 * expliquer comment on estime les effets aléatoires à partir de mu et sigma
