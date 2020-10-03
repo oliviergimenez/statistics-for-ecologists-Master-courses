@@ -7,7 +7,7 @@ output:
     fig_caption: no
     includes:
       in_header: header.tex
-    latex_engine: pdflatex
+    latex_engine: xelatex
     slide_level: 2
     theme: metropolis
   ioslides_presentation: default
@@ -19,8 +19,8 @@ knitr::opts_chunk$set(cache = TRUE,
                       echo = TRUE, 
                       message = FALSE, 
                       warning = FALSE,
-                      fig.height=6, 
-                      fig.width = 1.777777*6,
+                      fig.asp = 0.62,
+                      fig.width = 5,
                       fig.align = "center",
                       tidy = FALSE, 
                       comment = NA, 
@@ -28,29 +28,30 @@ knitr::opts_chunk$set(cache = TRUE,
                       prompt = FALSE, 
                       crop = TRUE,
                       comment = "#>",
-                      collapse = TRUE)
+                      collapse = TRUE,
+                      dpi = 300)
 knitr::opts_knit$set(width = 60)
 library(reshape2)
 library(tidyverse)
-theme_set(theme_light(base_size = 16))
+theme_set(theme_light(base_size = 12))
+library(R2jags)
+library(broom)
+library(visreg)
+library(DHARMa)
 make_latex_decorator <- function(output, otherwise) {
   function() {
       if (knitr:::is_latex_output()) output else otherwise
   }
 }
-theme_set(theme_light())
-library(mgcv)
-library(R2jags)
-library(broom)
 ```
 
 # Who's that guy?! 
 
 ## Olivier Gimenez
-* Senior scientist at CNRS, in Montpellier - France. 
+* Senior scientist at CNRS, Montpellier - France. 
 * Trained as a statistician 
 * Soon attracted by the bright side of ecology 
-* Working at the interface of animal demography, statistical modelling and social sciences 
+* Interface of animal demography, statistical modeling and social sciences 
 * More on <https://oliviergimenez.github.io/>
 * Twitter @oaggimenez
 
@@ -63,11 +64,11 @@ library(broom)
 
 ## Slides, R codes, data and practicals
 
-* I used `R`, and `RStudio` is your friend
+* I used `R`, and `RStudio`
 * I also used `R Markdown` to write reproducible documents (slides/exercises)
 * All material is available on GitHub <https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses>
 * Check out the files `gimenez_lectures.R` and `gimenez_practicals.R`
-* You will need the following R packages: `arm`, `bbmle`, `broom`, `dplyr`, `effects`, `lme4`, `mgcv`, `MuMIn`, `R2jags`, `tibble`, `visreg`
+* You will need the following `R` packages: `arm`, `bbmle`, `broom`, `dplyr`, `effects`, `lme4`, `mgcv`, `MuMIn`, `R2jags`, `tibble`, `visreg`
 
 
 ## On our plate 
@@ -398,7 +399,7 @@ $$f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}
   **Example**: Practically everything.
 
 ## Normal probability density function 
-```{r, echo=FALSE, fig.asp=0.618} 
+```{r, echo=FALSE} 
 min.x <- -5
 max.x <- 5
 num.samples <- 1000
@@ -449,7 +450,7 @@ Therefore, $X$ can be approximated by $Y \sim \text{N}(15,\sigma=\sqrt{10.5})$
 
 ## Example: Approximating Binomial by Normal (2)
   
-```{r, echo=FALSE, fig.asp=0.618} 
+```{r, echo=FALSE} 
 n<-50
 p<-0.3
 f<-hist(rbinom(100000, n,p), freq=FALSE, breaks=n/2,main="", xlab="x")
@@ -643,7 +644,7 @@ Use `optim` when the number of parameters is $> 1$.
 
 ## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
 
-```{r, echo=FALSE, fig.asp=0.618}
+```{r, echo=FALSE}
 lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
 plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="Binomial likelihood with 3 successes ot of 10 attempts",lwd=3)
 abline(v=0.3,h=0.26682,col='blue',lty=2,lwd=2)
@@ -655,7 +656,7 @@ abline(v=0.3,h=0.26682,col='blue',lty=2,lwd=2)
 
 ## A dart target, with the red cross representing the true parameter value
 
-```{r echo = FALSE, fig.asp=0.7}
+```{r echo = FALSE}
 library(plotrix)
 plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Imprecise and biased')
 draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
@@ -670,7 +671,7 @@ for (i in 1:35){
 
 ## A dart target, with the red cross representing the true parameter value
 
-```{r echo = FALSE, fig.asp=0.7}
+```{r echo = FALSE}
 plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Precise but biased')
 draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
 draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
@@ -684,7 +685,7 @@ for (i in 1:35){
 
 ## A dart target, with the red cross representing the true parameter value
 
-```{r echo = FALSE, fig.asp=0.7}
+```{r echo = FALSE}
 plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased but imprecise')
 draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
 draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
@@ -698,7 +699,7 @@ for (i in 1:35){
 
 ## A dart target, with the red cross representing the true parameter value
 
-```{r echo = FALSE, fig.asp=0.7}
+```{r echo = FALSE}
 plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased and precise!')
 draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
 draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
@@ -718,7 +719,7 @@ for (i in 1:35){
 
 ## Binomial likelihood with increasing sample size
 
-```{r, echo=FALSE, fig.asp = 0.618}
+```{r, echo=FALSE}
 lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter,log=TRUE)
 plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="",lwd=3)
 lik.fun <- function(parameter) dbinom(x=30, size=100, prob=parameter,log=TRUE)
@@ -784,7 +785,7 @@ for (i in 1:N){
 
 ## Does that look approximately correct?
 
-```{r, echo=FALSE, fig.height=5, fig.asp=.4}
+```{r, echo=FALSE}
 sim_ci %>%
   filter(i <= 10) %>%
   ggplot(aes(1, y)) +
@@ -802,7 +803,7 @@ sim_ci %>%
 
 ## Does that look approximately correct?
 
-```{r, echo=FALSE, fig.height=5, fig.asp=.4}
+```{r, echo=FALSE}
 sim_ci %>%
   filter(i > 10) %>%
   ggplot(aes(1, y)) +
@@ -885,7 +886,7 @@ $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} \sim \text{Normal}(0,1)$$
 ## Hypothesis testing: Rationale
 2. \alert{Construct a sampling distribution for the estimator under $H_0$}
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
 curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="")
 text(x = -2,y = 0.35,'Normal distribution N(0,1)', cex=0.9)
 ```
@@ -899,7 +900,7 @@ A probability value $\alpha$ is chosen to represent the level of significance re
 ## Hypothesis testing: Rationale
 3. For example, say the level of significance is $\alpha = 0.05$
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-2,seq(-2,2,0.01),2) 
  cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
@@ -910,7 +911,7 @@ text(x=0,y=0.2,'95%')
 ## Hypothesis testing: Rationale
 3. For example, say the level of significance is $\alpha = 0.05$
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -926,7 +927,7 @@ cord.x <- c(2,seq(2,3,0.01),3)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -942,7 +943,7 @@ cord.x <- c(2,seq(2,3,0.01),3)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -972,7 +973,7 @@ c(- z.half.alpha, z.half.alpha)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -1004,7 +1005,7 @@ $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} = {{12/20 - 0.5}\over{\sqrt{0.5(1-
 
 6. \alert{If the estimate falls in the region of extreme values, then $H_0$ is rejected}
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-2,seq(-2,2,0.01),2) 
  cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
@@ -1027,7 +1028,7 @@ as or more extreme than the actual observed results
 
 * The p-value is the red area
 
-```{r, echo=FALSE, fig.asp=0.65}
+```{r, echo=FALSE}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(0.89,seq(0.89,3,0.01),3) 
  cord.y <- c(0,dnorm(seq(0.89,3,0.01)),0) 
@@ -1347,7 +1348,7 @@ $$ \hat{\theta} = k/n = 19/57$$.
 
 ## What is the Beta distribution?
 
-```{r, echo=FALSE, fig.asp = 0.65} 
+```{r, echo=FALSE} 
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, 1, 1),type='l',xlab='q',ylab='',main='',lwd=3,col='red',ylim=c(0,2.5))
@@ -1392,7 +1393,7 @@ $$ \theta \mid k \sim Beta(a+k,b+n-k)$$
 * $E(\theta_{treatment}) = 0.339$ and $V(\theta_{treatment}) = 0.061$
 
 ## Prior $Beta(1,1)$ and posterior survival $Beta(20,39)$
-```{r, echo=FALSE, fig.asp = 0.65} 
+```{r, echo=FALSE} 
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, 20,39),type='l',xlab='',ylab='',main='',lwd=3,col='red')
@@ -1401,7 +1402,7 @@ points(x,dbeta(x, 1, 1),type='l',lwd=3)
 ```
 
 ## Prior $Beta(0.5,0.5)$ and posterior survival $Beta(19.5,38.5)$
-```{r, echo=FALSE, fig.asp = 0.65} 
+```{r, echo=FALSE} 
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, .5+19,.5+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
@@ -1410,7 +1411,7 @@ points(x,dbeta(x, .5, .5),type='l',lwd=3)
 ```
 
 ## Prior $Beta(2,2)$ and posterior survival $Beta(21,40)$
-```{r, echo=FALSE, fig.asp = 0.65} 
+```{r, echo=FALSE} 
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, 2+19,2+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
@@ -1419,7 +1420,7 @@ points(x,dbeta(x, 2, 2),type='l',lwd=3)
 ```
 
 ## Prior $Beta(20,1)$ and posterior survival $Beta(39,49)$
-```{r, echo=FALSE, fig.asp = 0.65} 
+```{r, echo=FALSE} 
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, 20+19,1+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
@@ -1862,7 +1863,7 @@ knitr::include_graphics('img/dipper.png')
 
 ## Compare \textcolor{blue}{vague} vs. \textcolor{red}{informative} prior
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.asp=0.55}
+```{r echo=FALSE}
 res = as.mcmc(CJS.sim.wo.apriori) 
 res = rbind(res[[1]],res[[2]]) 
 #head(res)
@@ -1943,7 +1944,7 @@ titanic.lm <- lm(survived ~ class, data = titanic)
 
 ## Clearly, the residuals are not normal!
 
-```{r, echo=FALSE, fig.asp = 0.65}
+```{r, echo=FALSE}
 hist(resid(titanic.lm),xlab='residuals',main='')
 ```
 
@@ -2046,7 +2047,7 @@ titanic %>%
 
 ## Or graphically...
 
-```{r, fig.asp = 0.5, echo = FALSE}
+```{r, echo = FALSE}
 titanic %>%
   mutate(survived = as_factor(survived)) %>%
   dplyr::count(class, survived) %>%
@@ -2106,7 +2107,7 @@ allEffects(titanic.glm)
 
 ## Effects plot
 
-```{r, fig.asp = 0.4}
+```{r}
 plot(allEffects(titanic.glm))
 ```
 
@@ -2135,7 +2136,7 @@ plot(allEffects(titanic.glm))
 
 ## Plot first
 
-```{r, fig.asp = 0.5}
+```{r, echo = FALSE}
 titanic %>%
   mutate(survived = as_factor(survived)) %>%
   dplyr::count(sex, survived) %>%
@@ -2153,13 +2154,13 @@ tidy(titanic.sex)
 
 ## Effects
 
-```{r, fig.asp = 0.5}
+```{r}
 allEffects(titanic.sex)
 ```
 
 ## Effects
 
-```{r, echo=FALSE, fig.asp = 0.5}
+```{r, echo=FALSE}
 plot(allEffects(titanic.sex))
 ```
 
@@ -2192,7 +2193,7 @@ allEffects(titanic.s.cl)
 
 ## Effects
 
-```{r, echo=FALSE, fig.asp = 0.5}
+```{r, echo=FALSE}
 plot(allEffects(titanic.s.cl))
 ```
 
@@ -2274,7 +2275,7 @@ head(un)
 
 ## Explore the data "Infant mortality (per 1000 births)"
 
-```{r, fig.asp = 0.5}
+```{r}
 plot(mortality~gdp,data=un,main="")
 ```
 
@@ -2296,19 +2297,19 @@ allEffects(gdp.glm)
 
 ## Effects plot
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 plot(allEffects(gdp.glm), ylab = "mortality", main = "")
 ```
 
 
 ## Plot model and data (Infant mortality per 1000 births)
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 plot(mortality~gdp,data=un,main="")
 ```
 
 ## Plot model using `visreg` package
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 visreg(gdp.glm, scale = "response", ylab = "mortality")
 points(mortality/1000 ~ gdp, data = un)
 ```
@@ -2326,14 +2327,14 @@ points(mortality/1000 ~ gdp, data = un)
 
 ## Testing for overdispersion (with `DHARMa` package)
 
-```{r, echo=TRUE, fig.asp = 0.45}
+```{r}
 testOverdispersion(simulateResiduals(gdp.glm, refit = TRUE))
 ```
 
 
 ## Overdispersion in logistic regression with proportions
 
-```{r logreg_overdisp, echo=1}
+```{r}
 gdp.overdisp <- glm(cbind(mortality, 1000 - mortality) ~ gdp, 
                data = un, family = quasibinomial)
 tidy(gdp.overdisp)
@@ -2354,7 +2355,7 @@ allEffects(gdp.glm)
 
 ## But standard errors do!
 
-```{r, echo=FALSE, fig.asp = 0.5}
+```{r, echo=FALSE}
 library(arm)
 par(mfrow=c(1,2))
 plot(mortality/1000 ~ gdp, data = un, main = "Binomial", pch=20)
@@ -2427,13 +2428,13 @@ table(seedl$count)
 
 ## Explore data
 
-```{r, fig.asp = 0.6}
+```{r}
 hist(seedl$count, main = "")
 ```
 
 ## Relationship between Nseedlings and light?
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 plot(seedl$light, seedl$count, xlab = "Light (GSF)", ylab = "Seedlings")
 ```
 
@@ -2470,7 +2471,7 @@ exp(coef(seedl.glm)[1])
 
 ## What is the relationship between Nseedlings and light? Use `visreg` package
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 visreg(seedl.glm, scale = "response")
 ```
 
@@ -2479,7 +2480,7 @@ visreg(seedl.glm, scale = "response")
 
 ## Always check overdispersion with count data
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 testOverdispersion(simulateResiduals(seedl.glm, refit = TRUE))
 ```
 
@@ -2488,7 +2489,7 @@ testOverdispersion(simulateResiduals(seedl.glm, refit = TRUE))
 
 Use family `quasipoisson`
 
-```{r, echo=TRUE, fig.asp = 0.5}
+```{r}
 seedl.overdisp <- glm(count ~ light, data = seedl, family = quasipoisson)
 tidy(seedl.overdisp)
 ```
@@ -2504,7 +2505,7 @@ allEffects(seedl.glm)
 
 ## Standard errors do not change here
 
-```{r, echo=FALSE, fig.asp = 0.5}
+```{r, echo=FALSE}
 par(mfrow=c(1,2))
 visreg(seedl.overdisp, scale = "response")
 visreg(seedl.glm, scale = "response")
@@ -2595,7 +2596,7 @@ knitr::include_graphics('img/pdm.png')
 Courtesy of  Eleni Kazakou.
 
 ## Plant example, universality of the allometric relationship?
-```{r, message=FALSE, warning=FALSE, include=FALSE}
+```{r, include=FALSE}
 # On lit le jeu de données à analyser et on le nettoie
 VMG <- read.table("dat/VMG.csv", header=TRUE, dec= ".", sep =";")
 VMG$Sp <- as.factor(VMG$Sp)
@@ -2618,10 +2619,10 @@ nbspecies = length(levels(Sp)) # ou bien length(unique(species))
 # nombre de mesures
 n = length(y)
 ```
-```{r, echo=FALSE, fig.width = 6, fig.height = 8, fig.asp = 0.5}
+```{r, echo = FALSE, out.width = '12cm', out.height = '7cm'}
 # graphical representation
 library(lattice)
-dat = data.frame(Biomass=x,nb_grain=y,Species=Sp)
+dat <- data.frame(Biomass=x,nb_grain=y,Species=Sp)
 xyplot(nb_grain ~ Biomass | Species,data=dat,xlab='Biomass',ylab='Number of grains')
 ```
 
@@ -2703,7 +2704,7 @@ tidy(allom.lm)
 
 Fit \alert{one} linear model, with no distinction of species: \alert{complete pooling}
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE}
 grid = seq(min(dat$Biomass),max(dat$Biomass),length=100)
 fitted = coef(allom.lm)[1] + coef(allom.lm)[2] * grid
 plot(grid,fitted,xlab='biomass',ylab='nb_grain',main='',type='l',lwd=3,col='red',xlim=c(0,40),ylim=c(0,11))
@@ -2714,7 +2715,7 @@ points(dat$Biomass,dat$nb_grain)
 
 Fit \alert{as many} linear models as we have species: \alert{no pooling}
 
-```{r, echo=FALSE, eval = FALSE}
+```{r, echo=FALSE}
   current_species = levels(dat$Species)[1]
   dat_species = subset(dat,Species==current_species)
   current_allom.lm <- lm(nb_grain ~ Biomass,dat_species)
@@ -2766,7 +2767,7 @@ allom.lmm3
 
 ## 'Old school' linear models, complete pooling vs. no pooling
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE}
 df_no_pooling <- lmList(nb_grain ~ Biomass | Species, dat) %>% 
   coef() %>% 
   rownames_to_column("Species") %>% 
@@ -2792,14 +2793,16 @@ df_pooled <- data_frame(
 df_models <- bind_rows(df_pooled, df_no_pooling) %>% 
   left_join(dat, by = "Species")
 
-p_model_comparison <- ggplot(df_models) + 
+p_model_comparison <- df_models %>% 
+  filter(Species %in% c("EROCIC","CONSUM","ARIROT","AVEBAR")) %>%
+  ggplot() + 
   aes(x = Biomass, y = nb_grain) + 
   # Set the color mapping in this layer so the points don't get a color
   geom_abline(aes(intercept = Intercept, slope = Slope, color = Model),
               size = .75) + 
   geom_point() +
-  facet_wrap("Species") +
-  #labs(x = xlab, y = ylab) + 
+  facet_wrap(~Species) +
+  labs(x = "biomass", y = "nb of grains") + 
   #scale_x_continuous(breaks = 0:4 * 2) + 
   # Fix the color palette 
   scale_color_brewer(palette = "Dark2") + 
@@ -2810,31 +2813,36 @@ p_model_comparison
 
 ## Linear \alert{mixed} model, with species as a random effect on the \alert{intercept}
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE}
 m <- lmer (nb_grain ~ Biomass + (1 | Species),dat)
 # Make a dataframe with the fitted effects
 df_partial_pooling <- coef(m)[["Species"]] %>% 
-  as_tibble() %>% 
   rownames_to_column("Species") %>% 
+  as_tibble() %>% 
   dplyr::rename(Intercept = `(Intercept)`, Slope = Biomass) %>% 
   add_column(Model = "Partial pooling")
 
 #head(df_partial_pooling)
 
 df_models <- bind_rows(df_pooled, df_no_pooling, df_partial_pooling) %>% 
-  left_join(dat, by = "Species")
-
-# Replace the data-set of the last plot
-p_model_comparison %+% df_models
-
-```
-
-## Let's zoom in
-
-```{r, echo=FALSE, fig.asp = 0.6}
-df_zoom <- df_models %>% 
-  filter(Species %in% c("AVEBAR", "EROCIC", "ARIROT", "CONSUM"))
-p_model_comparison %+% df_zoom
+  left_join(dat, by = "Species") %>%
+  as_tibble() %>%
+  mutate(Model = as_factor(Model),
+         Species = as_factor(Species))
+  
+df_models %>% 
+  filter(Species %in% c("EROCIC","CONSUM","ARIROT","AVEBAR")) %>%
+  ggplot() + 
+  aes(x = Biomass, y = nb_grain) + 
+  geom_abline(aes(intercept = Intercept, 
+                  slope = Slope, 
+                  color = Model),
+              size = .75) + 
+  geom_point() +
+  facet_wrap(~Species) +
+  labs(x = "biomass", y = "nb of grains") + 
+  scale_color_brewer(palette = "Dark2") + 
+  theme(legend.position = "top")
 ```
 
 
@@ -2925,7 +2933,7 @@ allom.1
 
 ## Output
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE}
 library(lattice)
 xyplot(y ~ x | Sp,
        xlab = "Biomass", ylab = "Nb seeds",main="complete pooling (no species effect)",
@@ -3022,7 +3030,7 @@ hat2 <- ylinear # pooling model (no species effect) fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying-intercept}
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE}
 # build a multipanel plot
 xyplot(y ~ x | Sp, panel=panelfun2,
        xlab="biomass",
@@ -3113,7 +3121,7 @@ hat3 <- yfit2 # varying-intercept varying-slope fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying intercept} vs \textcolor{blue}{varying intercept and slope}
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE, out.width = '12cm',out.height='7cm'}
 xyplot(y ~ x | Sp, panel=panelfun2,
        xlab="biomass",
        ylab="nb graines",
@@ -3133,7 +3141,7 @@ knitr::include_graphics('img/NA_stork.png')
 
 ## White stork: Is breeding success affected by weather conditions?
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 nbchicks = c(151,105,73,107,113,87,77,108,118,122,112,120,122,89,69,71,
                                                   53,41,53,31,35,14,18)
 nbpairs = c(173,164,103,113,122,112,98,121,132,136,133,137,145,117,90,
@@ -3156,7 +3164,7 @@ $$
 
 ## Standard GLM on proportions in R 
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 stork_glm <- glm(cbind(nbchicks,nbpairs-nbchicks) ~ temp + rainfall, 
                                                   family = binomial)
 tidy(stork_glm)
@@ -3175,26 +3183,26 @@ $$
 
 ## GLMM on proportions with year as a random effect in R
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 m <- glmer(cbind(nbchicks,nbpairs-nbchicks) ~ temp + rainfall 
                              + (1 | year), family = binomial)
 ```
 
 ## GLMM on proportions with year as a random effect in R
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE}
+```{r, echo=FALSE}
 m
 ```
 
 ## Yearly random intercepts
 
-```{r, echo=FALSE, message=FALSE, warning=FALSE,fig.align='center',out.width='10cm',out.height='6cm'}
+```{r, echo=FALSE}
 dotplot(ranef(m,condVar=TRUE))
 ```
 
 ## Calculate proportion of explained variance in GLMMs
 
-```{r, out.width = '8cm',out.height='10cm',echo=FALSE}
+```{r, out.width = '11cm',out.height='7cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/r2glmm.png')    
 ```
 
@@ -3204,43 +3212,50 @@ knitr::include_graphics('img/r2glmm.png')
 
 ```{r, out.width = '7cm',out.height='5cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/boar.png')  
-dat=read.table('dat/wboar.txt',header=T)
-dat[,1] = as.factor(dat[,1])
+dat <- read.table('dat/wboar.txt',header=T)
+dat[,1] <- as.factor(dat[,1])
 ```
 
-## Weight of offspring per female as a function of gestation duration
+## Offspring weight vs. gestation duration (12 females at random)
 
-```{r, echo=FALSE, fig.asp = 0.6}
-library(lattice)
-xyplot(offspring_weight ~ gestation | female_id,data=dat,xlab='duration of gestation (days)',ylab='offspring weight (g)')
-#plot(dat$GESTATION,dat$POIDS,xlab='gestation',ylab='poids')
-library(lme4)
+```{r, echo=FALSE}
+dat %>%
+  filter(female_id %in% sample(68,12)) %>%
+  ggplot(aes(x = gestation, y = offspring_weight)) +
+  geom_point() + 
+  facet_wrap(~female_id) +
+  labs(x = 'duration of gestation (days)',
+       y = 'offspring weight (g)')
 ```
 
-## Weight of offspring per year as a function of gestation duration
+## Offspring weight per year vs. gestation duration (all females)
 
-```{r, echo=FALSE, fig.asp = 0.6}
-library(lattice)
-xyplot(offspring_weight ~ gestation | as.factor(year),data=dat,xlab='duration of gestation (days)',ylab='offspring weight (g)')
-#plot(dat$GESTATION,dat$POIDS,xlab='gestation',ylab='poids')
-library(lme4)
+```{r, echo=FALSE}
+dat %>%
+  filter(female_id %in% sample(68,12)) %>%
+  ggplot(aes(x = gestation, y = offspring_weight)) +
+  geom_point() + 
+  facet_wrap(~year) +
+  labs(x = 'duration of gestation (days)',
+       y = 'offspring weight (g)')
 ```
 
 ## Is duration of gestation affecting offspring weight?
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
-m1 <- lmer(offspring_weight~gestation+as.factor(year)+(1|female_id),data=dat)
-m2 <- lmer(offspring_weight~gestation+(1|female_id),data=dat)
-m3 <- lmer(offspring_weight~1+(1|female_id),data=dat)
-m4 <- lmer(offspring_weight~as.factor(year)+(1|female_id),data=dat)
-AIC(m1,m2,m3,m4)
+```{r}
+library(lme4)
+m1 <- lmer(offspring_weight ~ gestation + as.factor(year) + (1|female_id), data = dat)
+m2 <- lmer(offspring_weight ~ gestation + (1|female_id), data = dat)
+m3 <- lmer(offspring_weight ~ 1 + (1|female_id), data = dat)
+m4 <- lmer(offspring_weight ~ as.factor(year) + (1|female_id), data = dat)
+AIC(m1, m2, m3, m4)
 ```
 
 One single best model (by far), no need for multimodel inference
 
 ## Best model parameter estimates
 
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 m1
 ```
 
@@ -3248,7 +3263,7 @@ The intercept is negative, which is unusual for a weight...
 
 ## GA\alert{M}M to the rescue!
 
-```{r, message=FALSE, warning=FALSE, include=FALSE}
+```{r, include=FALSE}
 # subsetting dataset by year
 data2025 <- subset(dat,year==2010)
 data2026 <- subset(dat,year==2011)
@@ -3262,26 +3277,30 @@ predicted2026 <- param[1] + param[2] * grid
 dat$year <- as.factor(dat$year)
 dum <- rep(1,length(dat$offspring_weight))
 ```
-```{r, echo=TRUE, message=FALSE, warning=FALSE}
+```{r}
 library(mgcv)
-m1_gamm<-gam(offspring_weight~s(gestation,by=year)+
+m1_gamm <- gam(offspring_weight~s(gestation,by=year)+
                           s(female_id,bs='re',by=dum),data=dat)
 AIC(m1,m1_gamm)
 ```
 
-## Plotting
+## Year 2010
 
-```{r, echo=FALSE, fig.asp = 0.6}
+```{r, echo=FALSE, fig.asp=0.8}
 newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2010',female_id='1',dum=0)
 pred2025 <- predict.gam(m1_gamm,newd)
 newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2011',female_id='1',dum=0)
 pred2026 <- predict.gam(m1_gamm,newd)
-par(mfrow=c(1,2))
-plot(data2025$gestation,data2025$offspring_weight,xlab='gestation',ylab='offspring_weight',main='2010',ylim=c(-200,700))
+plot(data2025$gestation,data2025$offspring_weight,xlab='gestation',ylab='offspring_weight',main='',ylim=c(-200,700))
 lines(grid,predicted2025,lwd=3,col='red')
 lines(seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),pred2025,lwd=3,col='blue')
 legend(50,600,c('GLMM','GAMM'),col=c('red','blue'),lty=1,lwd=3)
-plot(data2026$gestation,data2026$offspring_weight,xlab='gestation',ylab='offspring_weight',main='2011',ylim=c(-200,700))
+```
+
+## Year 2011
+
+```{r, echo=FALSE, fig.asp=0.8}
+plot(data2026$gestation,data2026$offspring_weight,xlab='gestation',ylab='offspring_weight',main='',ylim=c(-200,700))
 lines(grid,predicted2026,lwd=3,col='red')
 lines(seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),pred2026,lwd=3,col='blue')
 legend(40,600,c('GLMM','GAMM'),col=c('red','blue'),lty=1,lwd=3)
