@@ -48,17 +48,25 @@ make_latex_decorator <- function(output, otherwise) {
 # Who's that guy?! 
 
 ## Olivier Gimenez
-* Senior scientist at CNRS, Montpellier - France. 
+* Senior scientist at CNRS, Montpellier - France
 * Trained as a statistician 
 * Soon attracted by the bright side of ecology 
 * Interface of animal demography, statistical modeling and social sciences 
 * More on <https://oliviergimenez.github.io/>
 * Twitter @oaggimenez
 
+# Your turn
+
+```{r, echo = FALSE}
+knitr::include_graphics("img/that-moment-when-the-teacher-asks-you-to-introduce-yourself-to-the-class.jpg")
+```
+
+
 # Acknowledgments
 
 ## Acknowledgments
-* Sean Anderson, Ben Bolker, Jason Matthiopoulos, David Miller, Denis Réale and Francisco Rodriguez-Sanchez for sharing their courses material
+
+* Sean Anderson, Jason Matthiopoulos, Denis Réale, Francisco Rodriguez-Sanchez and Ruth King for sharing their courses material
 
 # This Class 
 
@@ -399,7 +407,7 @@ $$f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}
   **Example**: Practically everything.
 
 ## Normal probability density function 
-```{r, echo=FALSE} 
+```{r, echo=FALSE, fig.width=6} 
 min.x <- -5
 max.x <- 5
 num.samples <- 1000
@@ -646,7 +654,7 @@ Use `optim` when the number of parameters is $> 1$.
 
 ```{r, echo=FALSE}
 lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
-plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="Binomial likelihood with 3 successes ot of 10 attempts",lwd=3)
+plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="",lwd=3)
 abline(v=0.3,h=0.26682,col='blue',lty=2,lwd=2)
 ```
 
@@ -886,7 +894,7 @@ $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} \sim \text{Normal}(0,1)$$
 ## Hypothesis testing: Rationale
 2. \alert{Construct a sampling distribution for the estimator under $H_0$}
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
 curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="")
 text(x = -2,y = 0.35,'Normal distribution N(0,1)', cex=0.9)
 ```
@@ -900,7 +908,7 @@ A probability value $\alpha$ is chosen to represent the level of significance re
 ## Hypothesis testing: Rationale
 3. For example, say the level of significance is $\alpha = 0.05$
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-2,seq(-2,2,0.01),2) 
  cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
@@ -911,7 +919,7 @@ text(x=0,y=0.2,'95%')
 ## Hypothesis testing: Rationale
 3. For example, say the level of significance is $\alpha = 0.05$
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -927,7 +935,7 @@ cord.x <- c(2,seq(2,3,0.01),3)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -943,7 +951,7 @@ cord.x <- c(2,seq(2,3,0.01),3)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -973,7 +981,7 @@ c(- z.half.alpha, z.half.alpha)
 
 4. Find the values that tell us if a particular estimate is extreme
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-3,seq(-3,-2,0.01),-2) 
  cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
@@ -1005,7 +1013,7 @@ $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} = {{12/20 - 0.5}\over{\sqrt{0.5(1-
 
 6. \alert{If the estimate falls in the region of extreme values, then $H_0$ is rejected}
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(-2,seq(-2,2,0.01),2) 
  cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
@@ -1028,7 +1036,7 @@ as or more extreme than the actual observed results
 
 * The p-value is the red area
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
  curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
 cord.x <- c(0.89,seq(0.89,3,0.01),3) 
  cord.y <- c(0,dnorm(seq(0.89,3,0.01)),0) 
@@ -1361,7 +1369,7 @@ $$ \hat{\theta} = k/n = 19/57$$.
 
 ## What is the Beta distribution?
 
-```{r, echo=FALSE} 
+```{r, echo=FALSE, fig.width=6}
 x <- seq(0, 1, length=200)
 # distribution a posteriori beta
 plot(x,dbeta(x, 1, 1),type='l',xlab='q',ylab='',main='',lwd=3,col='red',ylim=c(0,2.5))
@@ -1646,9 +1654,15 @@ reglogcig.sample
 ## Let us assess convergence
 
 ```{r}
-R2jags::traceplot(reglogcig.sample,mfrow = c(1, 2),
-          varname=c('b.rain','b.temp'), ask = FALSE)
+R2jags::traceplot(reglogcig.sample, varname=c('b.rain'), ask = FALSE)
 ```
+
+## Let us assess convergence
+
+```{r}
+R2jags::traceplot(reglogcig.sample, varname=c('b.temp'), ask = FALSE)
+```
+
 
 ## Let us explore the results
 ```{r }
@@ -1683,10 +1697,10 @@ quantile(res[,'b.temp'],c(0.025,0.975))
 ```{r echo = FALSE}
 par(mfrow=c(1,2))
 plot(density(res[,'b.rain']),xlab="",ylab="", main="a posteriori density 
-     of the rainfall effect ",lwd=3)
+     of rainfall effect ",lwd=3)
 abline(v=0,col='red',lwd=2)
 plot(density(res[,'b.temp']),xlab="",ylab="", main="a posteriori density 
-     of the temperature effect ",lwd=3)
+     of temp effect ",lwd=3)
 abline(v=0,col='red',lwd=2)
 ```
 
@@ -1885,7 +1899,7 @@ knitr::include_graphics('img/dipper.png')
 
 ## Compare \textcolor{blue}{vague} vs. \textcolor{red}{informative} prior
 
-```{r echo=FALSE}
+```{r echo=FALSE, fig.width=6}
 res = as.mcmc(CJS.sim.wo.apriori) 
 res = rbind(res[[1]],res[[2]]) 
 #head(res)
@@ -2151,7 +2165,7 @@ plot(allEffects(titanic.glm))
 
 7. Plot model: `plot(allEffects(model))`. Alternatively, use package `visreg` (examples below).
 
-8. Examine residuals: check out our favorite textbook and the [vignette](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html) of the `DHARMa` package.
+8. Examine residuals: check out your favorite textbook and the [vignette](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html) of the `DHARMa` package.
 
 
 # Did men have higher survival than women?
@@ -2502,7 +2516,7 @@ visreg(seedl.glm, scale = "response")
 
 ## Always check overdispersion with count data
 
-```{r}
+```{r, fig.width=5}
 testOverdispersion(simulateResiduals(seedl.glm, refit = TRUE))
 ```
 
@@ -2527,7 +2541,7 @@ allEffects(seedl.glm)
 
 ## Standard errors do not change here
 
-```{r, echo=FALSE}
+```{r, echo=FALSE, fig.width=6}
 par(mfrow=c(1,2))
 visreg(seedl.overdisp, scale = "response")
 visreg(seedl.glm, scale = "response")
@@ -3447,6 +3461,6 @@ knitr::include_graphics('img/textbooks5.png')
 knitr::include_graphics('img/nutshell.png')    
 ```
 
-# Practical #3
+# Practical #2
 
 

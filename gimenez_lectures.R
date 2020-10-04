@@ -1,0 +1,3466 @@
+#' ---
+#' title: "Statistics for Ecologists"
+#' author: "Olivier Gimenez"
+#' date: "October 2020"
+#' output:
+#'   beamer_presentation:
+#'     fig_caption: no
+#'     includes:
+#'       in_header: header.tex
+#'     latex_engine: xelatex
+#'     slide_level: 2
+#'     theme: metropolis
+#'   ioslides_presentation: default
+#' classoption: aspectratio=169
+#' ---
+#' 
+## ----setup, include = FALSE-----------------------------------------------------------------------------
+knitr::opts_chunk$set(cache = TRUE, 
+                      echo = TRUE, 
+                      message = FALSE, 
+                      warning = FALSE,
+                      fig.asp = 0.62,
+                      fig.width = 5,
+                      fig.align = "center",
+                      tidy = FALSE, 
+                      comment = NA, 
+                      highlight = TRUE, 
+                      prompt = FALSE, 
+                      crop = TRUE,
+                      comment = "#>",
+                      collapse = TRUE,
+                      dpi = 300)
+knitr::opts_knit$set(width = 60)
+library(reshape2)
+library(tidyverse)
+theme_set(theme_light(base_size = 12))
+library(R2jags)
+library(broom)
+library(visreg)
+library(DHARMa)
+make_latex_decorator <- function(output, otherwise) {
+  function() {
+      if (knitr:::is_latex_output()) output else otherwise
+  }
+}
+
+#' 
+#' # Who's that guy?! 
+#' 
+#' ## Olivier Gimenez
+#' * Senior scientist at CNRS, Montpellier - France
+#' * Trained as a statistician 
+#' * Soon attracted by the bright side of ecology 
+#' * Interface of animal demography, statistical modeling and social sciences 
+#' * More on <https://oliviergimenez.github.io/>
+#' * Twitter @oaggimenez
+#' 
+#' # Your turn
+#' 
+## ---- echo = FALSE--------------------------------------------------------------------------------------
+knitr::include_graphics("img/that-moment-when-the-teacher-asks-you-to-introduce-yourself-to-the-class.jpg")
+
+#' 
+#' 
+#' # Acknowledgments
+#' 
+#' ## Acknowledgments
+#' 
+#' * Sean Anderson, Jason Matthiopoulos, Denis Réale, Francisco Rodriguez-Sanchez and Ruth King for sharing their courses material
+#' 
+#' # This Class 
+#' 
+#' ## Slides, R codes, data and practicals
+#' 
+#' * I used `R`, and `RStudio`
+#' * I also used `R Markdown` to write reproducible documents (slides/exercises)
+#' * All material is available on GitHub <https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses>
+#' * Check out the files `gimenez_lectures.R` and `gimenez_practicals.R`
+#' * You will need the following `R` packages: `arm`, `bbmle`, `broom`, `dplyr`, `effects`, `lme4`, `mgcv`, `MuMIn`, `R2jags`, `tibble`, `visreg`
+#' 
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods 
+#' * Hypothesis testing and multimodel inference 
+#' * Introduction to Bayesian inference 
+#' * Generalized Linear Models (GLMs) 
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' ## On our plate 
+#' * \alert{Distributions and likelihoods} 
+#' * Hypothesis testing and multimodel inference 
+#' * Introduction to Bayesian inference 
+#' * Generalized Linear Models (GLMs) 
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' # Distributions and likelihoods 
+#' ## Distributions
+#' 
+#' * What for? 
+#' * Conceptual models, bearing in mind that:
+#' 
+#' > All models are wrong, but some are useful (G.E.P. Cox, 1976)
+#' 
+#' * Either represent how the world works
+#' * Or capture the behavior of a statistic under some null hypothesis we'd like to test
+#' * Discrete or continuous
+#' 
+#' # Discrete distributions
+#' 
+#' ## Bernoulli distribution
+#' 
+#' **Context**: A single trial with two outcomes, success/failure
+#' 
+#' $X \sim \text{Bern}(p)$ with $p$ probability of having a success
+#' 
+#' | $x$  | $P(X=x)$  | 
+#' |----+-----------| 
+#' | 1  | $p$ | 
+#' | 0  | $1-p$ |
+#' 
+#' **Example**: $X$ is the random variable *being born a female*
+#' 
+#' ## Ten Bernoulli trials with $p=0.5$ 
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+data.frame(value = rbinom(10,1,0.5)) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(value = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+
+#' 
+#' ## Ten Bernoulli trials with $p=0.5$, again 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+set.seed(1979)
+rbinom(10,1,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+
+#' 
+#' ## Hundred Bernoulli trials with $p=0.5$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,1,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+
+#' 
+#' ## Hundred Bernoulli trials with $p=0.2$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,1,0.2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+
+#' 
+#' ## Hundred Bernoulli trials with $p=0.8$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,1,0.8) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  mutate(levels = fct_recode(value, "male" = "0", "female" = "1")) %>%
+  dplyr::count(levels) %>%
+  ggplot(aes(x = levels, y = n)) +
+  geom_col(fill = "#009E73", color = "black") +
+  labs(x = "", y = "")
+
+#' 
+#' ## Summary: Bernoulli distribution 
+#' * **notation**: $X \sim \text{Bern}(p)$ 
+#' * **range**: discrete, $x = 0, 1$ 
+#' * **distribution**: $P(X=x) = p^x (1-p)^{1-x}$ 
+#' * **parameters**: $p$ is the probability of success 
+#' * **mean**: $p$ 
+#' * **variance**: $p(1-p)$
+#' 
+#' 
+#' ## Binomial distribution
+#' 
+#' **Context**: Total number of successes from a fixed number of independent Bernoulli trials, all with same probability of success
+#' 
+#' $X \sim \text{Bin}(N,p)$ with $p$ probability of having a success and $N$ number of trials
+#' 
+#' $$P(X=x) = {{N!}\over{x!(N-x)!}}p^x(1-p)^{N-x} = \binom{N}{x}p^x(1-p)^{N-x}$$
+#' 
+#' **Example**: $X$ is the random variable *number of heads in a series of coin flipping*
+#' 
+#' ## Binomial distribution
+#' 
+#' $$P(X=x) = \binom{N}{x}p^x(1-p)^{N-x}$$
+#' 
+#' | $x$  | $P(X=x)$  | 
+#' |----+-----------| 
+#' | 0  | $(1-p)^N$ | 
+#' | 1  | $Np(1-p)^{N-1}$ |
+#' | ...  | ... |
+#' | N  | $p^N$ |
+#' 
+#' ## Binomial distribution
+#' 
+#' | $x$  | $P(X=x)$  | 
+#' |----+-----------| 
+#' | 0  | $(1-p)^N$ | 
+#' | 1  | $Np(1-p)^{N-1}$ |
+#' | ...  | ... |
+#' | N  | $p^N$ |
+#' 
+#' Fortunately, ```R``` has this pre-programmed 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+dbinom(x = 1, size = 10, prob = 0.5) # equals 10*0.5*(1-0.5)^(10-1)
+
+#' 
+#' ## Hundred Binomial trials with $N=10$ and $p=0.5$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,10,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Hundred Binomial trials with $N=10$ and $p=0.5$, again 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,10,0.5) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Hundred Binomial trials with $N=10$ and $p=0.2$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,10,0.2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Hundred Binomial trials with $N=10$ and $p=0.8$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rbinom(100,10,0.8) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(palette = "PiYG") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Playing around with probabilities 
+#' \begin{itemize}[<+- | alert@+>]
+#' \item Let's say $X \sim \text{Bin}(N=10,p=0.5)$ is a random variable counting the number of males
+#' \item What is the probability of having at most 2 males?
+#'   \item $P(X \leq 2) = P(X=0) + P(X=1)$
+#'   \item How to compute this in R?
+#'   \item dbinom(x=0,size=10,prob=0.5) + dbinom(x=1,size=10,prob=0.5)
+#' \end{itemize}
+#' 
+#' 
+#' ## Summary: Binomial distribution 
+#' * **notation**: $X \sim \text{Bin}(N,p)$ 
+#'   * **range**: discrete, $0 \leq x \leq N$ 
+#'   * **distribution**: $P(X=x) = \binom{N}{x}p^x (1-p)^{1-x}$ 
+#'   * **parameters**: $p$ the probability of success, and $N$ the number of trials 
+#' * **mean**: $Np$ 
+#'   * **variance**: $Np(1-p)$ 
+#'   * **in R**: ```rbinom```, ```dbinom```
+#' 
+#' 
+#' ## Poisson distribution
+#' 
+#' **Context**: Number of occurrences of an event over a given unit of space or time. 
+#' 
+#' $X \sim \text{Poisson}(\lambda)$ with $\lambda$ expected number of occurrences
+#' 
+#' $$P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$$
+#'   
+#' **Example**: $X$ is the random variable *number of birds counted on a colony during the breeding season*
+#'   
+#'   
+#' ## Poisson distribution
+#'   
+#'   $$P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$$
+#'   
+#'   | $x$  | $P(X=x)$  | 
+#'   |----+-----------| 
+#'   | 0  | $e^{-\lambda}$ | 
+#'   | 1  | $\lambda e^{-\lambda}$ |
+#'   | ...  | ... |
+#'   
+#' ## Poisson distribution
+#'   
+#'   | $x$  | $P(X=x)$  | 
+#'   |----+-----------| 
+#'   | 0  | $e^{-\lambda}$ | 
+#'   | 1  | $\lambda e^{-\lambda}$ |
+#'   | ...  | ... |
+#'   
+#' Fortunately, ```R``` has this pre-programmed 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+dpois(x=0,lambda=3) # equals exp(-3)
+
+#' 
+#' ## Hundred Poisson trials with $\lambda=1$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rpois(n = 100, lambda = 1) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(direction = -1, palette = "PuOr") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Hundred Poisson trials with $\lambda=2$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rpois(n = 100, lambda = 2) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  scale_fill_brewer(direction = -1, palette = "PuOr") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Hundred Poisson trials with $\lambda=10$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rpois(n = 100, lambda = 10) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Thousand Poisson trials with $\lambda=10$ 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+rpois(n = 1000, lambda = 10) %>% 
+  as_tibble() %>%
+  mutate(value = as_factor(value)) %>%
+  dplyr::count(value) %>%
+  ggplot(aes(x = value, y = n, fill = value)) +
+  geom_col() +
+  labs(x = "", y = "") +
+  theme(legend.position = "none")
+
+#' 
+#' ## Summary: Poisson distribution 
+#' * **notation**: $X \sim \text{Poisson}(\lambda)$ 
+#'   * **range**: discrete, $x \geq 0$ 
+#'   * **distribution**: $P(X=x) = {{e^{-\lambda}\lambda^x}\over{x!}}$ 
+#'   * **parameters**: $\lambda$ the rate or expected number per sample
+#' * **mean**: $\lambda$ 
+#'   * **variance**: $\lambda$ 
+#'   * **in R**: ```rpois```, ```dpois```
+#' 
+#' # Continuous distribution
+#' 
+#' ## Normal (Gaussian) distribution
+#' 
+#' **Context**: Distribution of “adding lots of things together”. Derived from *Central Limit Theorem*, which says that if you add a large number of independent samples from the same distribution the distribution of the sum
+#' will be approximately normal.
+#' 
+#' $X \sim \text{Normal}(\mu,\sigma^2)$ where $\mu$ is the mean and $\sigma^2$ the variance
+#' 
+#' $$f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}} \right)$$
+#'   
+#'   **Example**: Practically everything.
+#' 
+#' ## Normal probability density function 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+min.x <- -5
+max.x <- 5
+num.samples <- 1000
+x <- seq(from = min.x, to = max.x, length = num.samples)
+# Open new blank plot with x limits from -5 to 5, and y limits from 0 to 1
+plot(c(-5, 5), c(0, 1), xlab = 'x', ylab = 'f(x)', main = "", type = "n")
+# Add each density plot one at a time
+lines(x, dnorm(x, mean = 0, sd = 0.5), lwd = 3, col = 'red')
+lines(x, dnorm(x, mean = 0, sd = 1), lwd = 3, col = 'green')
+lines(x, dnorm(x, mean = 0, sd = 2), lwd =3, col = 'blue')
+lines(x, dnorm(x, mean = -2, sd = 1), lwd = 3, col = 'magenta')
+# We can also add a legend to the plot  
+legend("topright", 
+       c("mu=0, sigma=0.5", "mu=0, sigma=1", "mu=0, sigma=2", "mu=-2, sigma=1"), 
+       col = c('red','green','blue','magenta'),
+       lty = 1,
+       lwd = 3)
+
+#' 
+#' ## Summary: Normal distribution 
+#' * **notation**: $X \sim \text{N}(\mu,\sigma^2)$ 
+#'   * **range**: continuous, all real values 
+#' * **distribution**: $f(x) = {{1}\over{\sqrt{2\pi\sigma}}}\exp\left(  - {{(x-\mu)^2}\over{2\sigma^2}} \right)$ 
+#'   * **parameters**: $\mu$ the mean and $\sigma$ the standard deviation
+#' * **mean**: $\mu$ 
+#'   * **variance**: $\sigma^2$ 
+#'   * **in R**: ```rnorm```, ```dnorm```
+#' 
+#' ## Why do we love the Normal distribution 
+#' 
+#' * If has nice properties, such as: if $X \sim \text{N}(\mu,\sigma^2)$, then $Z = \displaystyle{{{X - \mu}\over{\sigma}} \sim \text{N}(0,1)}$
+#'   
+#' * It is a limiting distribution (*Central Limit Theorem*)
+#' 
+#' * It can be a good approximation for other distributions
+#' 
+#' 
+#' ## Example: Approximating Binomial by Normal (1)
+#' 
+#' $X \sim \text{Bin}(N=50,p=0.3)$
+#'   
+#' Mean is $Np = 50 \times 0.3 = 15$
+#'   
+#' Variance is $Np(1-p) = 50 \times 0.3 \times 0.7 = 10.5$
+#'   
+#' Therefore, $X$ can be approximated by $Y \sim \text{N}(15,\sigma=\sqrt{10.5})$
+#'   
+#' 
+#' ## Example: Approximating Binomial by Normal (2)
+#'   
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+n<-50
+p<-0.3
+f<-hist(rbinom(100000, n,p), freq=FALSE, breaks=n/2,main="", xlab="x")
+x<-f$breaks
+lines(x,dnorm(x,n*p,sqrt(n*p*(1-p))),col='red',lwd=3)
+abline(v=15,lwd=2,col='blue',lty=2)
+
+#' 
+#' # Conclusions about distributions
+#' 
+#' ## Common Distributions - Discrete
+#' 
+#' * When we have something that is dichotomous (either 0 or 1, negative/positive, false/true, male/female, present/absent):
+#'   
+#' $$\text{Binomial(number of trials, probability)}$$
+#'   
+#' * When we have something that is a discrete count, with no theoretical maximum, but with a common average:
+#'   
+#' $$\text{Poisson(lambda)}$$
+#'   
+#' ## Common Distributions - Discrete
+#'   
+#' * When we are recording the number of *failures* before a number of *successes*, or when we have something that is a discrete count with no theoretical maximum, and with more variation than Poisson:
+#'   
+#' $$\text{NegativeBinomial(number of successes, probability of success)}$$
+#' $$\text{NegativeBinomial(mean, overdispersion)}$$
+#'   
+#' ## Common Distributions - Continuous
+#'   
+#' * When we have something that is continuous, symmetrical about the mean and unbounded:
+#'   
+#' $$\text{Normal(mean, standard deviation)}$$
+#'   
+#' * When we have something that is continuous, not symmetrical, and bounded at zero:
+#'   
+#' $$\text{Exponential(rate)}$$
+#'   
+#' $$\text{Gamma(shape, rate)}$$
+#'   
+#' ## Common Distributions - Continuous
+#'   
+#' * When we have something that is continuous, not symmetrical, and bounded at zero:
+#'   
+#' $$\text{Lognormal(logmean, logstdev)}$$
+#'   
+#' * When we have something that is continuous, and bounded between 0 and 1:
+#'   
+#' $$\text{Beta(alpha, beta)}$$
+#'   
+#' * Simple bounded distribution:
+#'   
+#' $$\text{Uniform(min, max)}$$
+#'   
+#' ## More? Check out in R:
+## -------------------------------------------------------------------------------------------------------
+?Distributions
+
+#' 
+#' # Likelihoods
+#' 
+#' ## Fitting distributions to data
+#' 
+#' * So far, when talking about probability distributions, we assumed that we
+#' knew the parameter values
+#' 
+#' * And we wanted to know what data we might get from these distributions
+#' 
+#' * In the real world, it is usually the other way around
+#' 
+#' * A more relevant question might be:
+#'   
+#' > We have observed 3 births by a female during her 10 breeding
+#' attempts. What does this tell us about the true probability of
+#' getting a successful breeding attempt from this female? For the population?
+#'   
+#' ## Fitting distributions to data
+#'   
+#' We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+#' values:
+#'   
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+dbinom(x = 3, size = 10, prob = 0.1)
+
+#' 
+#' ## Fitting distributions to data
+#' 
+#' We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+#' values:
+#'   
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+dbinom(x=3,size=10,prob=0.9)
+
+#' 
+#' ## Fitting distributions to data
+#' 
+#' We don’t know what the probability of a birth is, but we can see what the probability of getting our data would be for different
+#' values:
+#'   
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+dbinom(x=3,size=10,prob=0.25)
+
+#' 
+#' So we would be more likely to observe 3 births if the probability is
+#' 0.25 than 0.1 or 0.9
+#' 
+#' ## The likelihood
+#' 
+#' * This reasoning is so common in statistics that it has a special name:
+#'   
+#' * \alert{The likelihood} is the probability of observing the data under a certain model
+#' 
+#' * The data are known, we usually consider the likelihood as a function of the model parameters $\theta_1,\theta_2, \ldots, \theta_p$
+#'   
+#' $$L = P(\theta_1,\theta_2, \ldots, \theta_p \mid \text{data})$$
+#'   
+#' * This is a very important concept
+#' 
+#' ## Likelihood functions
+#' 
+#' We may create a function to calculate a likelihood e.g.:
+#'   
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+lik.fun <- function(parameter){
+  ll <- dbinom(x=3, size=10, prob=parameter)
+  return(ll)
+}
+
+lik.fun(0.3)
+
+lik.fun(0.6)
+
+#' 
+#' ## Maximize the likelihood (3 successes ot of 10 attempts)
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+lik.fun <- function(parameter){
+  ll <- dbinom(x=3, size=10, prob=parameter)
+  return(ll)
+}
+p.grid = seq(0,1,by=0.01)
+lik = rep(NA,length(p.grid))
+for (i in 1:length(p.grid)){
+  lik[i] <- lik.fun(p.grid[i])
+}
+plot(p.grid, lik, 
+     xlab = 'prob. of getting a successful breeding attempt',
+     ylab = 'likelihood',
+     type = 'l',
+     lwd = 3)
+abline(v = 0.3,
+       lty = 2,
+       lwd = 2,
+       col = 'blue')
+
+#' 
+#' The *maximum* of the likelihood is at value $0.3$
+#'   
+#' ## The Maximum Likelihood
+#'   
+#' * There is always a set of parameters that gives you the highest likelihood of observing the data: the \alert{Maximum Likelihood Estimate(s) [MLEs]}
+#' 
+#' * This can be calculated using:
+#'   
+#' + Trial and error (not efficient!)
+#' + Compute the maximum of a function by hand (rarely doable in practice)
+#' + An iterative optimization algorithm: `?optimize` ($1$ parameter) and `?optim` ($> 1$ parameter) in `R`
+#' 
+#' ## \alert{By hand}: compute MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+#' 
+#' $P(Y=k) = {{k}\choose{N}} p^k (1-p)^{N-k} = L(p)$
+#'   
+#' $\log(L(p)) = \text{cte} + k \log(p) + (N-k) \log(1-p)$
+#'   
+#' We are searching for the maximum of $L$, or equivalently that of $\log(L)$
+#'   
+#' Compute derivate w.r.t. $p$: $\displaystyle{{{d\log(L)}\over{dp}} = {{k}\over{p}} – {{(N-k)}\over{(1-p)}}}$
+#'   
+#' Then solve $\displaystyle{{{d\log(L)}\over{dp}}=0}$; the MLE is $\displaystyle{\hat{p} = {{k}\over{N}}={{3}\over{10}}=0.3}$
+#'   
+#' Here, the MLE is the proportion of observed successes
+#' 
+#' ## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+#' 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
+# ?optimize
+optimize(lik.fun,c(0,1),maximum=TRUE)
+
+#' 
+#' Use `optim` when the number of parameters is $> 1$.
+#' 
+#' ## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
+plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="",lwd=3)
+abline(v=0.3,h=0.26682,col='blue',lty=2,lwd=2)
+
+#' 
+#' ## The Maximum Likelihood Estimate (MLE)
+#' 
+#' * \alert{The MLE is the best guess set of parameter values for our given data}
+#' 
+#' ## A dart target, with the red cross representing the true parameter value
+#' 
+## ----echo = FALSE---------------------------------------------------------------------------------------
+library(plotrix)
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Imprecise and biased')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.3,0.5),runif(1,2,6.5),col='blue',cex=1,pch=19)
+}
+
+#' 
+#' ## A dart target, with the red cross representing the true parameter value
+#' 
+## ----echo = FALSE---------------------------------------------------------------------------------------
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Precise but biased')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,0.3,0.5),runif(1,3.5,5.5),col='blue',cex=1,pch=19)
+}
+
+#' 
+#' ## A dart target, with the red cross representing the true parameter value
+#' 
+## ----echo = FALSE---------------------------------------------------------------------------------------
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased but imprecise')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.3,0.3),runif(1,-3.5,3.5),col='blue',cex=1,pch=19)
+}
+
+#' 
+#' ## A dart target, with the red cross representing the true parameter value
+#' 
+## ----echo = FALSE---------------------------------------------------------------------------------------
+plot(0,0,type = "n", xlim = c(-1.4,1.4), ylim = c(-10,10),axes=F,xlab='',ylab='',main = 'Unbiased and precise!')
+draw.circle(0,0,radius=0.7,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.5,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.3,lty=1,lwd=2,border='black')
+draw.circle(0,0,radius=0.1,lty=1,lwd=2,border='black')
+points(0,0,col='red',cex=2,pch=4)
+for (i in 1:35){
+  points(runif(1,-0.15,0.15),runif(1,-1.5,1.5),col='blue',cex=1,pch=19)
+}
+
+#' 
+#' ## The Maximum Likelihood Estimate (MLE)
+#' 
+#' * The MLE is the best guess set of parameter values for our given data
+#' 
+#' * \alert{But the chances of the true parameter values being close to the MLE is dependent on the amount of information in the data!}
+#' 
+#' ## Binomial likelihood with increasing sample size
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,xlab="probability of success (p)",ylab="log-likelihood(p)",main="",lwd=3)
+lik.fun <- function(parameter) dbinom(x=30, size=100, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,add=T,col='blue',lwd=3)
+lik.fun <- function(parameter) dbinom(x=300, size=1000, prob=parameter,log=TRUE)
+plot(lik.fun,0,1,add=T,col='red',lwd=3)
+abline(v=0.3,col='grey',lty=2)
+legend('bottomright',c('3 out of 10','30 out of 100','300 out of 1000'), col=c('black','blue','red'),lty=1,lwd=2)
+
+#' 
+#' # Confidence intervals: A refresher
+#' 
+#' ## Let's approach confidence intervals through simulations
+#' 
+## ---- message=FALSE, warning=FALSE, include=FALSE-------------------------------------------------------
+library(dplyr)
+library(ggplot2)
+set.seed(12345) # try different values
+
+#' 
+#' Imagine you are measuring the temperature of a cup of water 10 times but you have an old really bad thermometer. 
+#' The true temperature is 3 degrees Celsius and the standard deviation on the sampling error is 5.
+#' 
+## ---- message=FALSE, warning=FALSE----------------------------------------------------------------------
+# Simulate data:
+mu <- 3
+sigma <- 5
+n <- 10
+y <- rnorm(n = n, mean = mu, sd = sigma)
+y
+
+#' 
+#' ## Apply linear regression
+#' 
+#' We will estimate a mean temperature by fitting an intercept only linear regression model:
+#'   
+## ---- message=FALSE, warning=FALSE,collapse=TRUE--------------------------------------------------------
+m <- lm(y~1)
+library(broom)
+tidy(m)
+
+confint(m)
+
+#' 
+#' 
+#' 
+#' ## Let's illustrate what those confidence intervals really represent. 
+#' 
+#' * Imagine you went outside 20 times and each time you measured the cup of water 10 times. Then you fitted a linear regression model with an intercept only each time and plotted the confidence intervals.
+#' 
+## ---- echo=FALSE, message=FALSE, warning=FALSE----------------------------------------------------------
+N <- 20
+sim_ci <- NULL
+for (i in 1:N){
+  y <- rnorm(n = n, mean = mu, sd = sigma)
+  m <- lm(y~1)
+  ci <- confint(m, level = 0.95)
+  sim_ci <- rbind(sim_ci,data.frame(l = ci[1], u = ci[2], y = y, i = i))
+}
+
+#' 
+#' * 19 times out 20 (95%) the 95% confidence intervals should contain the true value. 
+#' 
+#' ## Does that look approximately correct?
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+sim_ci %>%
+  filter(i <= 10) %>%
+  ggplot(aes(1, y)) +
+  geom_point(alpha = 0.2) +
+  geom_hline(aes(yintercept = l)) +
+  geom_hline(aes(yintercept = u)) +
+  geom_hline(yintercept = mu, colour = "red") +
+  labs(x = "", y = "") +
+  facet_wrap(~i, ncol = 5, scales = "free") +
+  xlim(0.99, 1.01) + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+#' 
+#' ## Does that look approximately correct?
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+sim_ci %>%
+  filter(i > 10) %>%
+  ggplot(aes(1, y)) +
+  geom_point(alpha = 0.2) +
+  geom_hline(aes(yintercept = l)) +
+  geom_hline(aes(yintercept = u)) +
+  geom_hline(yintercept = mu, colour = "red") +
+  labs(x = "", y = "") +
+  facet_wrap(~i, ncol = 5, scales = "free") +
+  xlim(0.99, 1.01) + 
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank())
+
+#' 
+#' Confidence intervals are just \alert{one realization} of a theoretically repeated experiment.
+#' 
+#' 
+#' 
+#' ## Likelihood key facts
+#' 
+#' * The likelihood is \alert{the probability of observing a (fixed) dataset given a set of parameter values} (to be estimated)
+#' 
+#' * Maximum likelihood theory provides \alert{estimates with optimal properties}: unbiased, minimal variance and normally distributed (asymptotically)
+#' 
+#' * The \alert{rate of change of the likelihood} around the MLE is an indication of our confidence in the estimated parameter values
+#' 
+#' * Use \alert{confidence intervals to capture uncertainty} surrounding MLEs
+#' 
+#' * Likelihood functions \alert{can get very complicated!}
+#' 
+#' 
+#' ## Textbooks
+#' 
+## ---- out.width = '10cm',out.height='7.5cm',fig.align='center',echo=FALSE-------------------------------
+knitr::include_graphics('img/textbooks1.png')    
+
+#' 
+#' # This Class 
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods
+#' * \alert{Hypothesis testing and multimodel inference}  
+#' * Introduction to Bayesian inference 
+#' * Generalized Linear Models (GLMs) 
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' The problem: 
+#' 
+#' > Suppose a coin toss turns up $k = 12$ heads out of $N = 20$ trials. 
+#' Can we say that the coin toss is fair? Do we get more heads than expected (assuming the coin toss is fair)?
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 1. \alert{Define the null and alternative hypotheses}. 
+#' The null hypothesis is usually the one that represents the less complicated explanation of the real world
+#' 
+#' * $H_0$: the coin toss is fair
+#' 
+#' * $H_1$: the coin toss is unfair, we get more heads or tails than expected
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 2. \alert{Construct a sampling distribution for the estimator under $H_0$}
+#' 
+#' * The number of heads $X$ is a Binomial distribution with parameter $p$
+#' 
+#' * Under $H_0$, we have $p = p_0$ with $p_0=0.5$ if the coin toss is fair
+#' 
+#' * Under $H_1$, we have $p \neq p_0$
+#' 
+#' * Remember that an estimator of $p$ is the MLE $\hat{p} = k/N$, which is normally distributed with mean $p$ and some variance; therefore, we have under $H_0$:
+#' 
+#' $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} \sim \text{Normal}(0,1)$$
+#' 
+#' ## Hypothesis testing: Rationale
+#' 2. \alert{Construct a sampling distribution for the estimator under $H_0$}
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="")
+text(x = -2,y = 0.35,'Normal distribution N(0,1)', cex=0.9)
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 3. The sampling distribution will assign a likelihood to every possible value of the estimator. \alert{Very small values of likelihood -- at the extremes of the sampling distribution -- can be taken as evidence that the population generating the data has a parameter different to the one postulated by $H_0$}. 
+#' 
+#' A probability value $\alpha$ is chosen to represent the level of significance required of the result. For example $\alpha = 0.05$ means that, under $H_0$, the estimator will be found in the extreme regions of parameter space only five times every one hundred samples.
+#' 
+#' ## Hypothesis testing: Rationale
+#' 3. For example, say the level of significance is $\alpha = 0.05$
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-2,seq(-2,2,0.01),2) 
+ cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+text(x=0,y=0.2,'95%')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 3. For example, say the level of significance is $\alpha = 0.05$
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-3,seq(-3,-2,0.01),-2) 
+ cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+cord.x <- c(2,seq(2,3,0.01),3) 
+ cord.y <- c(0,dnorm(seq(2,3,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+ text(x=-2.5,y=0.05,'2.5%')
+ text(x=2.5,y=0.05,'2.5%')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 4. Find the values that tell us if a particular estimate is extreme
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-3,seq(-3,-2,0.01),-2) 
+ cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+cord.x <- c(2,seq(2,3,0.01),3) 
+ cord.y <- c(0,dnorm(seq(2,3,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+ text(x=-2.5,y=0.05,'2.5%')
+ text(x=2.5,y=0.05,'2.5%')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 4. Find the values that tell us if a particular estimate is extreme
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-3,seq(-3,-2,0.01),-2) 
+ cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+cord.x <- c(2,seq(2,3,0.01),3) 
+ cord.y <- c(0,dnorm(seq(2,3,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+ text(x=-2.5,y=0.05,'2.5%')
+ text(x=2.5,y=0.05,'2.5%')
+arrows(-2,0.1,-2,0,col='red',lwd=3,angle=20,length=0.15)
+arrows(2,0.1,2,0,col='red',lwd=3,angle=20,length=0.15)
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 4. Find the values that tell us if a particular estimate is significantly different from what would be expected under $H_0$
+#' 
+#' * Straightforward in `R`:
+#' 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+alpha <- 0.05 
+z.half.alpha <- qnorm(1 - alpha/2) 
+c(- z.half.alpha, z.half.alpha) 
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 4. Find the values that tell us if a particular estimate is extreme
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-3,seq(-3,-2,0.01),-2) 
+ cord.y <- c(0,dnorm(seq(-3,-2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+cord.x <- c(2,seq(2,3,0.01),3) 
+ cord.y <- c(0,dnorm(seq(2,3,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+ text(x=-2.5,y=0.05,'2.5%')
+ text(x=2.5,y=0.05,'2.5%')
+arrows(-2,0.1,-2,0,col='red',lwd=3,angle=20,length=0.15)
+arrows(2,0.1,2,0,col='red',lwd=3,angle=20,length=0.15)
+ text(x=-2,y=0.15,'-1.959964',col='red')
+ text(x=2,y=0.15,'1.959964',col='red')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 5. The estimate ($\hat{q}$) is calculated from the data and compared with the critical value(s)
+#' 
+#' $${{\hat{p} - p_0}\over{\sqrt{p_0(1-p_0)/N}}} = {{12/20 - 0.5}\over{\sqrt{0.5(1-0.5)/20}}} = 0.89$$
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 6. \alert{If the estimate falls in the region of extreme values, then $H_0$ is rejected}, otherwise we say that there is not enough evidence to reject it
+#' 
+#' * The test statistic 0.89 lies between the critical values -1.96 and 1.96. Hence, at $\alpha = 0.05$ significance level, we do not reject the null hypothesis that the coin toss is fair 
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' 6. \alert{If the estimate falls in the region of extreme values, then $H_0$ is rejected}
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(-2,seq(-2,2,0.01),2) 
+ cord.y <- c(0,dnorm(seq(-2,2,0.01)),0) 
+ polygon(cord.x,cord.y,col='skyblue')
+text(x=0,y=0.2,'95%')
+arrows(0.89,0.35,0.89,0,col='red',lwd=3,angle=20,length=0.15)
+text(x=1.8,y=0.35,'observed value (0.89)',col='red')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' * Another way to test significance is to use the p-value
+#' 
+#' * Probability that, when $H_0$ is true, the value of the test statistics would be the same 
+#' as or more extreme than the actual observed results
+#' 
+#' * If the p-value is $< \alpha$, then reject $H_0$
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' * The p-value is the red area
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+ curve(dnorm(x,0,1),xlim=c(-3,3),main='', xlab = "", ylab="") 
+cord.x <- c(0.89,seq(0.89,3,0.01),3) 
+ cord.y <- c(0,dnorm(seq(0.89,3,0.01)),0) 
+ polygon(cord.x,cord.y,col='red')
+cord.x <- c(-3,seq(-3,-0.89,0.01),-0.89) 
+ cord.y <- c(0,dnorm(seq(-3,-0.89,0.01)),0) 
+ polygon(cord.x,cord.y,col='red')
+arrows(-0.89,0.35,-0.89,0,col='black',lwd=3,angle=20,length=0.15)
+text(x=-1.3,y=0.35,'-0.89',col='black')
+arrows(0.89,0.35,0.89,0,col='black',lwd=3,angle=20,length=0.15)
+text(x=1.3,y=0.35,'0.89',col='black')
+
+#' 
+#' ## Hypothesis testing: Rationale
+#' 
+#' * To compute the p-value, we need $P(X \geq 0.89) + P(X \leq -0.89)$
+#' 
+#' * This can be obtained in `R` as follows:
+#' 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+pval <- 2 * (1 - pnorm(0.89)) # pnorm(x) = P(X <= x)
+pval # two−tailed p−value 
+
+#' 
+#' ## Problems with hypothesis testing
+#' 
+## ---- out.width = '7cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/harry_pvalue.jpg')    
+
+#' 
+#' 
+#' ## Problems with hypothesis testing
+#' 
+#' \begin{itemize}[<+->]
+#' \item \textbf{Significance levels are arbitrary}: Changing $\alpha$ magically turns an
+#' ordinary result into something worth reporting.
+#' \item \textbf{Results are only qualitative}: We get an idea of whether $H_0$ is true
+#' but not how well supported it is by the data. The use of p--values as measures of
+#' evidence has also received criticism.
+#' \item \textbf{Null hypotheses are guaranteed to be false}: In the sense that all models are wrong,
+#' no population parameter will ever be exactly the same as our expectations.
+#' \item \textbf{A significant result is guaranteed if the sample size is large enough}: $\alpha$ 
+#' must be appropriately chosen in relation to sample size. There are methods for doing this, known as power analyses.
+#' \item \textbf{The dichotomy between a null/alternative hypotheses is limiting}: Why not look at
+#' several candidate values at the same time?
+#' \end{itemize}
+#' 
+#' 
+#' 
+#' # Multimodel inference
+#' 
+#' ## Linear regression example
+#' 
+#' Impact of climatic conditions on white stork breeding success
+#' 
+## ---- out.width = '12cm',out.height='7cm',fig.align='center',echo=FALSE---------------------------------
+knitr::include_graphics('img/stork_world.png')    
+
+#' 
+#' ## Linear regression example
+#' 
+#' Impact of climatic conditions on white stork breeding success
+## ----size='scriptsize'----------------------------------------------------------------------------------
+nb_young <- c(2.55,1.85,2.05,2.88,3.13,2.21,2.43,2.69,2.55,2.84,2.47,2.69,
+             2.52,2.31,2.07,2.35,2.98,1.98,2.53,2.21,2.62,1.78,2.30)
+temperature <- c(15.1,13.3,15.3,13.3,14.6,15.6,13.1,13.1,15.0,11.7,15.3,
+                14.4,14.4,12.7,11.7,11.9,15.9,13.4,14.0,13.9,12.9,15.1,
+                13.0)
+rainfall <- c(67,52,88,61,32,36,72,43,92,32,86,28,57,55,66,26,28,96,48,90,
+             86,78,87)
+lin_reg <- lm(nb_young ~ temperature + rainfall)
+
+#' 
+#' ## Linear regression example
+#' 
+#' Impact of climatic conditions on white stork breeding success
+## ----size='footnotesize',collapse=TRUE------------------------------------------------------------------
+library(broom)
+
+tidy(lin_reg) # elegant summary using broom package
+
+#' 
+#' ## How to select a best model?
+#' 
+#' * The proportion of explained variance $R^2$ is problematic, because the more variables you have, the bigger $R^2$ is
+#' 
+#' * Idea: \alert{penalize models with too many parameters}
+#' 
+#' ## Akaike information criterion (AIC)
+#' 
+#' $$AIC = - 2 \log(L(\hat{\theta}_1,\ldots,\hat{\theta}_K)) + 2 K$$
+#' 
+#' with $L$ the likelihood and $K$ the number of parameters $\theta_i$
+#' 
+#' ## Akaike information criterion (AIC)
+#' 
+#' $$AIC = {\color{red}{- 2 \log(L(\hat{\theta}_1,\ldots,\hat{\theta}_K))}} + 2 K$$
+#' 
+#' \textcolor{red}{A measure of goodness-of-fit of the model to the data}: the more parameters you have, the smaller the deviance is (or the bigger the likelihood is)
+#' 
+#' ## Akaike information criterion (AIC)
+#' 
+#' $$AIC = - 2 \log(L(\hat{\theta}_1,\ldots,\hat{\theta}_K)) + {\color{red}{2 K}}$$
+#' 
+#' \textcolor{red}{A penalty}: twice the number of parameters $K$
+#' 
+#' ## Akaike information criterion (AIC)
+#' 
+#' * $AIC$ makes the balance between *quality of fit* and *complexity* of a model
+#' 
+#' * Best model is the one with lowest $AIC$ value
+#' 
+#' * Two models are difficult to distinguish if $\Delta AIC < 2$
+#' 
+#' ## Back to the linear regression example
+#' 
+#' Fit all candidate models on white stork data and get their AIC
+## ----size='sciptsize',collapse=T------------------------------------------------------------------------
+linreg_temp_rain <- lm(nb_young ~ temperature + rainfall)
+linreg_temp <- lm(nb_young ~ temperature)
+linreg_rain <- lm(nb_young ~  rainfall)
+linreg_null <- lm(nb_young ~ 1)
+
+c(AIC(linreg_temp_rain),AIC(linreg_temp),AIC(linreg_rain),AIC(linreg_null))
+
+#' 
+#' Looks as though model with rainfall has the lowest AIC
+#' 
+#' However, the model with both covariates has an AIC value within 2 units
+#' 
+#' Where to go from there?! \alert{Multimodel inference}
+#' 
+#' # Multimodel inference
+#' 
+#' ## AIC weights 
+#' 
+#' * Let $\Delta \text{AIC}_i$ be the difference between $AIC$ of model $i$ and the lowest AIC (corresponding to the best model)
+#' 
+#' * Akaike weight $w_i$ for model $i$ gives the probability that model $i$ is the best model 
+#' 
+#' $$w_i = {{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}\over{\displaystyle{\sum_{n=1}^N{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}}}}$$
+#' 
+#' 
+#' 
+#' ## AIC weights with R: Back to the stork example
+#' 
+#' Compute the weights:
+## ---- message=FALSE, warning=FALSE----------------------------------------------------------------------
+library(bbmle)
+AICtab(linreg_temp_rain,linreg_temp,linreg_rain,linreg_null, 
+       base = T, weights = T)
+
+#' 
+#' ## Model averaging 
+#' 
+#' * Model-averaged estimates are weighted averages (by the $w_i$) of the parameters from each of the models $$\bar{\hat{\theta}}_j = \displaystyle{\sum_{i=1}^K{w_i \; \hat{\theta}_j(\text{model}_i)}}$$
+#' 
+#' ## Model-averaged estimate of rainfall effect, by hand (1)
+#' 
+## -------------------------------------------------------------------------------------------------------
+tidy(linreg_temp_rain)
+
+#' 
+#' 0.273 * (-0.007315652)
+#' 
+#' ## Model-averaged estimate of rainfall effect, by hand (2)
+#' 
+## -------------------------------------------------------------------------------------------------------
+tidy(linreg_temp)
+
+#' 
+#' 0.273 * (-0.007315652) + 0.031 * 0
+#' 
+#' ## Model-averaged estimate of rainfall effect, by hand (3)
+#' 
+## -------------------------------------------------------------------------------------------------------
+tidy(linreg_rain)
+
+#' 
+#' 0.273 * (-0.007315652) + 0.031 * 0 + 0.617 * (-0.007163572)
+#' 
+#' ## Model-averaged estimate of rainfall effect, by hand (4)
+#' 
+## -------------------------------------------------------------------------------------------------------
+tidy(linreg_null)
+
+#' 
+#' 0.273 * (-0.007315652) + 0.031 * 0 + 0.617 * (-0.007163572) + 0.080 * 0 
+#' 
+#' \alert{= -0.006417097}
+#' 
+#' ## Model-averaging with R: Back to the stork example
+#' 
+#' Perform model averaging
+## ---- message=FALSE, warning=FALSE,collapse=T-----------------------------------------------------------
+library(MuMIn)
+m.ave <- model.avg(linreg_temp_rain,linreg_temp,linreg_rain,
+                                    linreg_null,rank = "AIC")
+m.ave$coefficients
+
+#' 
+#' * The \alert{full} average assumes that a variable is included in every model, but in some models the corresponding coefficient is set to zero.
+#' 
+#' * The \alert{subset} (or \alert{conditional}) average only averages over the models where the parameter appears.
+#' 
+#' ## Conclusions about multimodel inference
+#' 
+#' * Several models can be \alert{ranked and weighted} to provide a quantitative measure 
+#' of \alert{relative support} for each competing hypothesis
+#' 
+#' * If there are two or more models with \alert{similarly high levels of support, model averaging} of this ‘top model set’ provides a robust means of obtaining parameter estimates
+#' 
+#' * Acknowledge \alert{uncertainty in the selection of a single best model}
+#' 
+#' ## Textbooks
+#' 
+## ---- out.width = '5cm',out.height='7cm',echo=FALSE-----------------------------------------------------
+knitr::include_graphics('img/textbooks2.png')    
+
+#' 
+#' 
+#' # This Class 
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference  
+#' * \alert{Introduction to Bayesian inference} 
+#' * Generalized Linear Models (GLMs) 
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' # Bayesian inference 
+#' 
+#' ## Disclaimer
+#' 
+## ---- out.width = '70%',echo=FALSE,fig.align='center'---------------------------------------------------
+knitr::include_graphics('img/amazing-thomas-bayes-illustration.jpg')    
+
+#' 
+#' * Quick and dirty introduction to Bayesian inference
+#' 
+#' * For more, check out my 7-hour Bayesian workshop <https://github.com/oliviergimenez/Bayesian_Workshop>
+#' 
+#' ## Introduction
+#' 
+#' * The Bayesian approach dates back to 18th century to Reverend Thomas Bayes.
+## ---- out.width = '20%',echo=FALSE,fig.align='center'---------------------------------------------------
+knitr::include_graphics('img/Thomas_Bayes.png')    
+
+#' 
+#' 
+#' * However, due to practical problems of implementing the Bayesian approach, little advance was made for over two centuries.
+#' * Recent advances in \alert{computational power} coupled with the development of new methodology have led to a great increase in the application of Bayesian methods within the last two decades.
+#' 
+#' 
+#' 
+#' 
+#' ## Classical versus Bayesian	
+#' * Typical stats problems involve estimating parameter $\theta$ with available data.
+#' * The frequentist approach (maximum likelihood estimation – MLE) assumes that \alert{the parameters are fixed, but have unknown values to be estimated}.
+#' * Classical estimates generally provide a \alert{point estimate} of the parameter of interest.
+#' * The Bayesian approach assumes that \alert{the parameters are not fixed but have some fixed  unknown distribution} - a distribution for the parameter.
+## ---- out.width = '6cm',out.height='3.5cm',fig.align='center',echo=FALSE--------------------------------
+knitr::include_graphics('img/bayesian_evol.png')    
+
+#' 
+#' ## What is the Bayesian Approach?	
+#' * The approach is based upon the idea that the experimenter begins with \alert{some prior beliefs} about the system.
+#' * And then \alert{updates} these beliefs on the basis of observed data.
+#' * This updating procedure is based upon what is known as Bayes’ Theorem:
+#' 
+#' $$\Pr(A \mid B) = \frac{\Pr(B \mid A) \; \Pr(A)}{\Pr(B)}$$
+#' 
+#' ## What is the Bayesian Approach?	
+#' 
+#' * Schematically, if $A = \theta$ and $B = \text{data}$
+#' * The Bayes’ Theorem
+#' 
+#' $$\Pr(A \mid B) = \frac{\Pr(B \mid A) \; \Pr(A)}{\Pr(B)}$$
+#' 
+#' * Translates into:
+#' 
+#' $$\Pr(\theta \mid \text{data}) = \frac{\Pr(\text{data} \mid \theta) \; \Pr(\theta)}{\Pr(\text{data})}$$
+#' 
+#' ## Bayes formula	
+#' 
+#' $${\color{red}{\Pr(\theta \mid \text{data})}} = \frac{\color{blue}{\Pr(\text{data} \mid \theta)} \; \color{green}{\Pr(\theta)}}{\color{orange}{\Pr(\text{data})}}$$
+#' 
+#' * \textcolor{red}{Posterior distribution}: the basis for inference, a distribution, possibly multivariate if more than one parameter ($\theta$)
+#' 
+#' * \textcolor{blue}{Likelihood}: we know that guy from before, same as in the MLE approach
+#' 
+#' * \textcolor{green}{Prior distribution}: the source of much discussion about the Bayesian approach
+#' 
+#' * $\color{orange}{\Pr(\text{data}) = \int L(\text{data} \mid \theta) \;\Pr(\theta) d\theta }$: possibly high-dimensional integral, difficult if not impossible to calculate. This is one of the reasons why we need simulation (MCMC) methods - more soon.
+#' 
+#' ## A Simple Example
+#' * Let us take a simple example to fix ideas
+#' * 120 deer were radio-tracked over winter
+#' * 61 close to a plant, 59 far from any human activity
+#' * Question: is there a treatment effect on survival?
+#' 
+#' |            | Released   | Alive | Dead | Other |
+#' |------------+----------+-------+------+-------| 
+#' | treatment  | 61 | 19 | 38 | 4 |
+#' | control    | 59 | 21 | 38 | 0 |
+#' 
+#' 
+#' ## A Simple Example
+#' * So, $n = 57$ deer were assigned to the treatment group of which $k=19$ survived the winter.
+#' * Of interest is the probability of \alert{over-winter survival}, call it $\theta$, for the general population within the treatment area.
+#' * The obvious estimate is simply to take the ratio $k/n=19/57$.
+#' * How would the classical statistician justify this estimate?
+#' 
+#' ## A Simple Example
+#' * Our model is that we have a Binomial experiment (assuming independent and identically distributed draws from the population) 
+#' * $K$ the number of alive individuals at the end of the winter, so that $P(K=k) = \binom{n}{k}\theta^k(1-\theta)^{n-k}$
+#' 
+#' * The classical approach is to maximise the corresponding likelihood with respect to $\theta$ to obtain the entirely plausible MLE:
+#' 
+#' $$ \hat{\theta} = k/n = 19/57$$.
+#' 
+#' * Remember lecture on likelihoods
+#' 
+#' ## The Bayesian Approach
+#' * The Bayesian starts off with \alert{a prior}.
+#' * Now, the one thing we know about $\theta$ is that is a continuous random variable and that it lies between zero and one.
+#' * Thus, a suitable prior distribution might be the Beta which is defined on this range $[0,1]$.
+#' * What is the Beta distribution?
+#' 
+#' ## What is the Beta distribution?
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+x <- seq(0, 1, length=200)
+# distribution a posteriori beta
+plot(x,dbeta(x, 1, 1),type='l',xlab='q',ylab='',main='',lwd=3,col='red',ylim=c(0,2.5))
+points(x,dbeta(x, 2, 2),type='l',lwd=3,col='green')
+points(x,dbeta(x, 5, 5),type='l',lwd=3,col='blue')
+legend('topright',legend=c('beta(1,1)','beta(2,2)','beta(5,5)'),lty=c(1,1,1),col=c('red','green','blue'))
+
+#' 
+#' ## The Bayesian Approach
+#' 
+#' * Suppose we assume a priori that $\theta \sim Beta(a,b)$ so that $\Pr(\theta) = \theta^{a-1} (1 - \theta)^{b-1}$
+#' 
+#' * Then we have:
+#' 
+#' $$
+#' \begin{aligned}
+#' {\color{red}{Pr(\theta \mid k)}} & \propto {\color{blue}{\binom{n}{k}\theta^k(1-\theta)^{n-k}}} \; {\color{green}{\theta^{a-1} (1 - \theta)^{b-1}}}\\
+#' & \propto {\theta^{(a+k)-1}} {(1-\theta)^{(b+n-k)-1}} 
+#' \end{aligned}
+#' $$
+#' 
+#' * That is: 
+#' 
+#' $$ \theta \mid k \sim Beta(a+k,b+n-k)$$
+#' 
+#' * Take a Beta prior with a Binomial likelihood, you get a Beta posterior (conjugacy)
+#' 
+#' ## Application to the deer example
+#' 
+#' * We have that survival $\theta\mid k \sim Beta(a+k,b+n-k)$
+#' 
+#' * The posterior has an \alert{explicit expression}, easy to manipulate
+#' 
+#' * $E(\theta \mid k) = \displaystyle{\frac{a + k}{n+a+b}}$ 
+#' 
+#' * $V(\theta \mid k) = \displaystyle{\frac{(a+k)(b+n-k)}{(n+a+b)^2(n+a+b+1)}}$
+#' 
+#' * If we take a Uniform prior, i.e. $Beta(1,1)$, then we have 
+#' 
+#' * $\theta_{treatment} \sim Beta(1+19,1+57-19)=Beta(20,39)$
+#' 
+#' * $E(\theta_{treatment}) = 0.339$ and $V(\theta_{treatment}) = 0.061$
+#' 
+#' ## Prior $Beta(1,1)$ and posterior survival $Beta(20,39)$
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+x <- seq(0, 1, length=200)
+# distribution a posteriori beta
+plot(x,dbeta(x, 20,39),type='l',xlab='',ylab='',main='',lwd=3,col='red')
+# distribution a priori uniforme
+points(x,dbeta(x, 1, 1),type='l',lwd=3)
+
+#' 
+#' ## Prior $Beta(0.5,0.5)$ and posterior survival $Beta(19.5,38.5)$
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+x <- seq(0, 1, length=200)
+# distribution a posteriori beta
+plot(x,dbeta(x, .5+19,.5+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
+# distribution a priori uniforme
+points(x,dbeta(x, .5, .5),type='l',lwd=3)
+
+#' 
+#' ## Prior $Beta(2,2)$ and posterior survival $Beta(21,40)$
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+x <- seq(0, 1, length=200)
+# distribution a posteriori beta
+plot(x,dbeta(x, 2+19,2+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
+# distribution a priori uniforme
+points(x,dbeta(x, 2, 2),type='l',lwd=3)
+
+#' 
+#' ## Prior $Beta(20,1)$ and posterior survival $Beta(39,49)$
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+x <- seq(0, 1, length=200)
+# distribution a posteriori beta
+plot(x,dbeta(x, 20+19,1+57-19),type='l',xlab='',ylab='',main='',lwd=3,col='red')
+# distribution a priori uniforme
+points(x,dbeta(x, 20, 1),type='l',lwd=3)
+
+#' 
+#' ## The Role of the Prior
+#' * In biological applications, the prior is a convenient means of \alert{incorporating expert opinion or information from previous or related studies} that would otherwise need to be ignored.
+#' * With sparse data, the role of the prior can be to enable inference on key parameters that would otherwise be impossible.
+#' * With sufficiently large and informative datasets the prior typically has little effect on the results.
+#' * \alert{Always perform a sensitivity analysis!}
+#' 
+#' ## Informative Priors / No Information
+#' * Informative priors aim to reflect information available to the analyst that is gained independently of the data being studied.
+#' * In the absence of any prior information on one or more model parameters we wish to ensure that this lack of knowledge is properly reflected in the prior.
+#' * \alert{Always perform a sensitivity analysis!}
+#' 
+#' ## Back to the Bayes formula	
+#' 
+#' * Bayes inference is easy! Well, not so easy in real-life applications...
+#' 
+#' * The issue is in ${\Pr(\theta \mid \text{data})} = \displaystyle{\frac{{\Pr(\text{data} \mid \theta)} \; {\Pr(\theta)}}{\color{orange}{\Pr(\text{data})}}}$
+#' 
+#' * $\color{orange}{\Pr(\text{data}) = \int{L(\text{data} \mid \theta)\Pr(\theta) d\theta}}$ is a $N$-dimensional integral if $\theta = \theta_1, \ldots, \theta_N$ 
+#' 
+#' * Difficult, if not impossible to calculate! 
+#' 
+#' * Until recently, Bayesian analysis of complex models not possible
+#' 
+#' ## Bayesian computation
+#' 
+#' * In the early 1990s, statisticians rediscovered work from the 1950's in physics
+#' 
+## ---- out.width = '9cm',out.height='3cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/metropolis.png')   
+
+#' 
+#' * Use \alert{stochastic simulation} to draw samples from posterior distributions
+#' 
+#' * Avoid explicit calculation of integrals in Bayes formula
+#' 
+#' * Instead, approximate posterior to arbitrary degree of precision by drawing large sample
+#' 
+#' * \alert{Markov chain Monte Carlo = MCMC}; boost to Bayesian statistics!
+#' 
+#' ## MANIAC
+#' 
+## ---- out.width = '11cm',out.height='7cm',fig.align='center',echo=FALSE---------------------------------
+knitr::include_graphics('img/maniac.png')   
+
+#' 
+#' ## Animating the Metropolis algorithm - 2D example
+#' 
+#' [\alert{https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/}](https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/)
+#' 
+#' ## The Markov-chain Monte Carlo Interactive Gallery
+#' 
+#' [\alert{https://chi-feng.github.io/mcmc-demo/}](https://chi-feng.github.io/mcmc-demo/)
+#' 
+#' ## Why are MCMC methods so useful?
+#' 
+#' * MCMC: stochastic algorithm to produce sequence of dependent random numbers (from Markov chain)
+#' 
+#' * Converge to equilibrium (aka stationary) distribution
+#' 
+#' * \alert{Equilibrium distribution is the desired posterior distribution}
+#' 
+#' * Several ways of constructing these chains: Metropolis-Hastings, Gibbs sampler, Metropolis-within-Gibbs, ...
+#' 
+#' * How to implement them in practice?!
+#' 
+#' 
+#' ## In practice, when is equilibrium attained?
+#' 
+#' * Run multiple chains from arbitrary starting places (inits)
+#' 
+#' * Assume convergence when all chains reach same regime
+#' 
+#' * Discard initial burn-in phase
+#' 
+#' * Summarize posterior distribution with mean, sd and credible intervals
+#' 
+#' ## In practice, when is equilibrium attained?
+#' 
+## ---- out.width = '90%',echo=FALSE----------------------------------------------------------------------
+knitr::include_graphics('img/mcmc.png')   
+
+#' 
+#' ## Introduction to JAGS (Just Another Gibbs Sampler)
+#' 
+#' \begin{center}
+#' Martyn Plummer
+#' \end{center}
+## ---- out.width = '5cm',out.height='5cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/plummer.png') 
+
+#' 
+#' ## Let's redo the logistic regression with the White stork data
+#' 
+#' * We'll need data
+#' 
+#' * We'll need to build a model - write down the likelihood 
+#' 
+#' * We'll need to specify priors for parameters
+#' 
+#' ## Let us read in the data
+## -------------------------------------------------------------------------------------------------------
+nbsuccess = c(151,105,73,107,113,87,77,108,118,122,112,120,122,89,69,71,
+              53,41,53,31,35,14,18)
+nbpairs = c(173,164,103,113,122,112,98,121,132,136,133,137,145,117,90,80,
+            67,54,58,39,42,23,23)
+temp = c(15.1,13.3,15.3,13.3,14.6,15.6,13.1,13.1,15.0,11.7,15.3,14.4,14.4,
+         12.7,11.7,11.9,15.9,13.4,14.0,13.9,12.9,15.1,13.0)
+rain = c(67,52,88,61,32,36,72,43,92,32,86,28,57,55,66,26,28,96,48,90,86,
+           78,87)
+datax = list(N=23,nbsuccess = nbsuccess,nbpairs = nbpairs, 
+             temp = temp,rain = rain)
+
+#' 
+#' ## What is the model?
+#' 
+#' $$
+#' \begin{aligned}
+#' \text{nbchicks}_i \sim \text{Binomial(nbpairs}_i,p_i) \\
+#' \text{logit}(p_i) = a + b_{temp} \; \text{temp}_{i} + b_{rain} \; \text{rainfall}_{i}\\
+#' \end{aligned}
+#' $$
+#' 
+#' ## Let us build the model
+#' 
+## ---- echo=TRUE, eval=FALSE-----------------------------------------------------------------------------
+## {
+## # Likelihood
+##   	for( i in 1 : N){
+## 		nbsuccess[i] ~ dbin(p[i],nbpairs[i])
+## 		logit(p[i]) <- a + b.temp * temp[i] + b.rain * rain[i]
+## 		}
+## # ...
+
+#' 
+#' ## Let us specify priors 
+## ---- echo=TRUE, eval=FALSE-----------------------------------------------------------------------------
+## {
+## # Likelihood
+##   	for( i in 1 : N){
+## 		nbsuccess[i] ~ dbin(p[i],nbpairs[i])
+## 		logit(p[i]) <- a + b.temp * temp[i] + b.rain * rain[i]
+## 		}
+## # Priors
+## a ~ dnorm(0,0.001)
+## b.temp ~ dnorm(0,0.01)
+## b.rain ~ dnorm(0,0.01)
+## }
+
+#' **Warning**: Jags uses precision for Normal distributions (1 / variance)
+#' 
+## ---- include=FALSE-------------------------------------------------------------------------------------
+model <- 
+paste("
+model
+{
+	for( i in 1 : N) 
+		{
+		nbsuccess[i] ~ dbin(p[i],nbpairs[i])
+		logit(p[i]) <- a + b.temp * temp[i] + b.rain * rain[i]
+		}
+			
+# priors for regression parameters
+a ~ dnorm(0,0.001)
+b.temp ~ dnorm(0,0.001)
+b.rain ~ dnorm(0,0.001)
+			
+	}
+")
+writeLines(model,"reglogistique.txt")
+
+#' 
+#' ## Let us specify a few additional things
+#' 
+## -------------------------------------------------------------------------------------------------------
+# list of lists of initial values (one for each MCMC chain)
+init1 <- list(a=-.5)
+init2 <- list(a=.5)
+inits <- list(init1,init2)
+
+# specify parameters that need to be estimated
+parameters <- c("a","b.temp","b.rain")
+
+# specify nb iterations for burn-in and final inference 
+nb.burnin <- 1000
+nb.iterations <- 2500
+
+#' 
+#' ## Let us run Jags!
+#' 
+## -------------------------------------------------------------------------------------------------------
+# load R2jags to run Jags through R
+library(R2jags)
+reglogcig.sample <- jags(datax,inits,parameters,n.iter=nb.iterations,
+                         model.file="reglogistique.txt",
+                         n.chains=2,n.burnin=nb.burnin)
+
+#' 
+#' ## Display parameter estimates
+## -------------------------------------------------------------------------------------------------------
+reglogcig.sample
+
+#' 
+#' ## Let us assess convergence
+#' 
+## -------------------------------------------------------------------------------------------------------
+R2jags::traceplot(reglogcig.sample, varname=c('b.rain'), ask = FALSE)
+
+#' 
+#' ## Let us assess convergence
+#' 
+## -------------------------------------------------------------------------------------------------------
+R2jags::traceplot(reglogcig.sample, varname=c('b.temp'), ask = FALSE)
+
+#' 
+#' 
+#' ## Let us explore the results
+## -------------------------------------------------------------------------------------------------------
+res <- as.mcmc(reglogcig.sample) # convert outputs in a list
+res <- rbind(res[[1]],res[[2]]) # put two MCMC lists on top of each other
+head(res)
+
+#' 
+#' ## Compute a posteriori Pr(rain < 0)
+## -------------------------------------------------------------------------------------------------------
+# probability that the effect of rainfall is negative
+mean(res[,'b.rain'] < 0)
+
+#' 
+#' ## Compute a posteriori Pr(temp < 0)
+## -------------------------------------------------------------------------------------------------------
+# probability that the effect of temperature is negative
+mean(res[,'b.temp'] < 0)
+
+#' 
+#' ## Get credible interval for the rain effect
+## -------------------------------------------------------------------------------------------------------
+quantile(res[,'b.rain'],c(0.025,0.975))
+
+#' 
+#' ## Get credible interval for the temperature effect
+## -------------------------------------------------------------------------------------------------------
+quantile(res[,'b.temp'],c(0.025,0.975))
+
+#' 
+#' ## Graphical summaries
+## ----echo = FALSE---------------------------------------------------------------------------------------
+par(mfrow=c(1,2))
+plot(density(res[,'b.rain']),xlab="",ylab="", main="a posteriori density 
+     of rainfall effect ",lwd=3)
+abline(v=0,col='red',lwd=2)
+plot(density(res[,'b.temp']),xlab="",ylab="", main="a posteriori density 
+     of temp effect ",lwd=3)
+abline(v=0,col='red',lwd=2)
+
+#' 
+#' There is an influence of rainfall, but not temperature (credible interval does not and does contain 0)
+#' 
+#' 
+#' 
+#' ## How to incorporate prior information? A capture-recapture example
+#' 
+#' * Estimating survival using capture-recapture data
+#' 
+#' * E.g. 101 i.e. captured, missed and recaptured
+#' 
+#' * Simplest model: constant survival $\phi$ and detection $p$ probabilities 
+#' 
+#' $$\Pr(101) = \phi (1-p) \phi p $$
+#' 
+#' * Assuming a vague prior 
+#' 
+#' $$\phi_{prior} \sim \text{Uniform}(0,1)$$
+#' 
+## ----echo=FALSE, message = FALSE, warning = FALSE, include = FALSE--------------------------------------
+# read in data
+data <- as.matrix(read.table("dat/dipper.dat"))
+
+# number of individuals 
+n <- dim(data)[[1]] 
+
+# number of capture occasions
+K <- dim(data)[[2]] 
+
+# compute the date of first capture
+e <- NULL
+for (i in 1:n){
+	temp <- 1:K
+	e <- c(e,min(temp[data[i,]==1]))
+	}
+
+# data
+datax <- list(N=n,Years=K,obs=data,First=e)
+
+# mark-recapture analysis for European Dippers
+model <- 
+paste("
+model
+{
+for (i in 1:N){
+	alive[i,First[i]] <- 1
+	for (j in (First[i]+1):Years){
+		alive[i,j] ~ dbern(alivep[i,j])
+		alivep[i,j] <- surv * alive[i,j-1]
+		obs[i,j] ~ dbern(sightp[i,j])
+		sightp[i,j] <- resight * alive[i,j]
+		}
+	}
+surv~dunif(0,1)
+resight~dunif(0,1)
+}
+")
+writeLines(model,"CJS.txt")
+
+# In JAGS we have to give good initial values for the latent state alive. At all occasions when an individual was observed, its state is alive = 1 for sure. In addition, if an individual was not observed at an occasion, but was alive for sure, because it was observed before and thereafter (i.e. has a capture history of e.g. {101} or {10001}), then we know that the individual was alive at all of these occasions, and thus alive = 1. Therefore, we should provide initial values of alive = 1 at these positions as well. The following function provides such initial values from the observed capture histories (from Kery and Schaub book)
+
+known.state.cjs <- function(ch){
+   state <- ch
+   for (i in 1:dim(ch)[1]){
+      n1 <- min(which(ch[i,]==1))
+      n2 <- max(which(ch[i,]==1))
+      state[i,n1:n2] <- 1
+      state[i,n1] <- NA
+      }
+   state[state==0] <- NA
+   return(state)
+   }
+
+Xinit <- known.state.cjs(data)
+
+# first list of inits
+init1 <- list(surv=.1,resight=.1,alive=Xinit)
+# second list of inits
+init2 <- list(surv=.9,resight=.9,alive=Xinit)
+
+# specify the parameters to be monitored
+parameters <- c("resight","surv")
+
+# load R2jags
+library(R2jags)
+
+# run the MCMC analysis WITHOUT PRIOR INFORMATION
+CJS.sim <-jags(data=datax, inits=list(init1,init2), parameters,n.iter=1000,model.file="CJS.txt",n.chains=2,n.burnin=500)
+
+# to see the numerical results
+# CJS.sim
+# traceplot(CJS.sim) # diagnostic de convergence
+
+# keep 3 first years only
+data = data[,1:3]
+databis = NULL
+for (i in 1:nrow(data)){
+	# discard all non existing individuals i.e. those that were never captured
+	# test whether there was at least 1 detection and keep this individual if it was the case
+	if (sum(data[i,] == c(0,0,0))<3)  databis = rbind(databis,data[i,])
+	}
+data = databis
+
+# number of individuals 
+n <- dim(data)[[1]] 
+
+# number of capture occasions
+K <- dim(data)[[2]] 
+
+# compute the date of first capture
+e <- NULL
+for (i in 1:n){
+	temp <- 1:K
+	e <- c(e,min(temp[data[i,]==1]))
+	}
+
+# data
+datax <- list(N=n,Years=K,obs=data,First=e)
+
+Xinit <- known.state.cjs(data)
+
+# first list of inits
+init1 <- list(surv=.1,resight=.1,alive=Xinit)
+# second list of inits
+init2 <- list(surv=.9,resight=.9,alive=Xinit)
+
+# specify the parameters to be monitored
+parameters <- c("resight","surv")
+
+# run the MCMC analysis WITHOUT PRIOR INFORMATION
+CJS.sim.wo.apriori <-jags(data=datax, inits=list(init1,init2), parameters,n.iter=1000,model.file="CJS.txt",n.chains=2,n.burnin=500)
+
+# same model but with informative prior on survival 
+model <- 
+paste("
+model
+{
+for (i in 1:N){
+	alive[i,First[i]] <- 1
+	for (j in (First[i]+1):Years){
+		alive[i,j] ~ dbern(alivep[i,j])
+		alivep[i,j] <- surv * alive[i,j-1]
+		obs[i,j] ~ dbern(sightp[i,j])
+		sightp[i,j] <- resight * alive[i,j]
+		}
+	}
+surv~dnorm(0.57,187.6) # Norm(0.57,sd=0.073) ; precision = 1/var = 1/0.073^2
+resight~dunif(0,1)
+}
+")
+writeLines(model,"CJS2.txt")
+
+CJS.sim.apriori <-jags(data=datax, inits=list(init1,init2), parameters,n.iter=1000,model.file="CJS2.txt",n.chains=2,n.burnin=500)
+
+#' 
+#' ## Case study
+#' 
+#' * European dippers in Eastern France (1981-1987)
+## ---- out.width = '3cm',out.height='4cm',echo=FALSE-----------------------------------------------------
+knitr::include_graphics('img/dipper.png')    
+
+#' 
+#' * Mean posterior is $\phi_{posterior} = 0.56$ with credible interval $[0.51,0.61]$
+#' 
+#' ## How to incorporate prior information?
+#' 
+#' * Using information on body mass and annual survival of 27 European passerines, we can predict survival of European dippers using only body mass
+#' 
+#' * For dippers, body mass is 59.8g, therefore $\phi = 0.57$ with $\text{sd} = 0.073$
+#' 
+#' * Assuming an \alert{informative prior} $\phi_{prior} \sim \text{Normal}(0.57,0.073)$
+#' 
+#' * Mean posterior $\phi_{posterior} = 0.56$ with credible interval $[0.52, 0.60]$
+#' 
+#' * No increase of precision in posterior inference 
+#' 
+#' ## A general result
+#' 
+#' \textcolor{red}{This is a general result, the Bayesian and frequentist estimates will always agree if there is sufficient data, so long as the likelihood is not explicitly ruled out by the prior}
+#' 
+#' ## How to incorporate prior information?
+#' 
+#' * Using information on body mass and annual survival of 27 European passerines, we can predict survival of European dippers using only body mass
+#' 
+#' * For dippers, body mass is 59.8g, therefore $\phi = 0.57$ with $\text{sd} = 0.073$
+#' 
+#' * Assuming an informative prior $\phi_{prior} \sim \text{Normal}(0.57,0.073)$ 
+#' 
+#' * **With 3 first years only**
+#' 
+#' * Width of credible interval is 0.47 (vague prior) vs. 0.30 (informative prior) 
+#' 
+#' * Huge increase of precision in posterior inference ($40\%$ gain)!
+#' 
+#' ## Compare \textcolor{blue}{vague} vs. \textcolor{red}{informative} prior
+#' 
+## ----echo=FALSE, fig.width=6----------------------------------------------------------------------------
+res = as.mcmc(CJS.sim.wo.apriori) 
+res = rbind(res[[1]],res[[2]]) 
+#head(res)
+
+res2 = as.mcmc(CJS.sim.apriori) 
+res2 = rbind(res2[[1]],res2[[2]]) 
+#head(res2)
+
+plot(density(res2[,'surv']),xlab='survival',ylab='probability density',col='red',lwd=4,main='',xlim=c(0.2,1))
+lines(density(res[,'surv']),xlab='survival',ylab='probability density',col='blue',lwd=4,main='')
+legend('topleft',lwd=2,legend=c('with prior info','without prior info'),col=c('red','blue'))
+
+#' 
+#' ## Take-home message: shall I go for frequentist or Bayes?
+#' 
+#' * Pros
+#'      + allows \alert{formal use of prior information}
+#'      + error propagation made easy
+#'      + with same MCMC algorithms, \alert{complex (hierarchical) models can be implemented}
+#' 
+#' * Cons
+#'      + computational burden can be high
+#'      + model selection is still difficult to perform
+#'      + \alert{checking convergence is painful}
+#'      + is Jags too flexible?
+#' 
+#' * So what?
+#'      + make an informed and \alert{pragmatic choice}
+#'      + are you after complexity, speed, uncertainties, etc?
+#'      + talk to colleagues
+#'      
+#' ## Textbooks
+#' 
+## ---- out.width = '9cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/textbook6.png')    
+
+#' 
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference  
+#' * Introduction to Bayesian inference
+#' * Generalized Linear Models (GLMs)
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference  
+#' * Introduction to Bayesian inference
+#' * \alert{Generalized Linear Models (GLMs)}  
+#' * Generalized Additive Models (GAMs) 
+#' * Mixed Effect Models
+#' 
+#' # Generalized Linear Models (GLMs)
+#' 
+#' ## Survival of passengers on the Titanic ~ Class
+#' 
+#' Read `titanic_long.csv` dataset.
+#' 
+## ----read_titanic, collapse=T---------------------------------------------------------------------------
+titanic <- read.csv("dat/titanic_long.csv") %>%
+  mutate(across(where(is.character), as_factor))
+head(titanic)
+
+#' 
+#' 
+#' ## Let's fit a linear model
+#' 
+## ----titanic_lm, echo=1---------------------------------------------------------------------------------
+titanic.lm <- lm(survived ~ class, data = titanic)
+#library(broom)
+#tidy(m5)
+#layout(matrix(1:4, nrow=2))
+#plot(m5)
+
+#' 
+#' 
+#' ## Clearly, the residuals are not normal!
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+hist(resid(titanic.lm),xlab='residuals',main='')
+
+#' 
+#' 
+#' ## Generalized linear models (GLMs)
+#' 
+#' * GLMs extend the linear model to scenarios that involve **non-normal error distributions**, hence the term \alert{generalized}
+#' 
+#' * The **mean response** is expressed as a **linear function of the predictors** using a **link function**, hence the term \alert{linear}
+#' 
+#' ## Generalized Linear Models
+#' 
+#' 1. **Response variable**
+#'     + Bernoulli/Binomial: Binary variables 0/1
+#'     + Poisson: Counts 0, 1, 2, ...
+#'     + Normal: Real values
+#'     + etc
+#'   
+#' 2. **Predictors** (continuous or categorical)
+#' 
+#' 3. **Link function**
+#'     + Gaussian: identity
+#'     + Binomial: logit
+#'     + Poisson: log
+#'     + Type in `?family`
+#' 
+#' ## Bernoulli/Binomial distribution (logistic regression) 
+#' 
+#' - Response variable: Yes/No (e.g. dead/alive, male/female, presence/absence)
+#' 
+#' - Link function: `logit` 
+#' 
+#' $$
+#'   \begin{aligned} 
+#'   \text{logit}(p) = \ln \left( \dfrac {p} {1-p}\right) \\ 
+#'   \end{aligned} 
+#' $$
+#' 
+#' - Then, if predictor is $x$
+#' 
+#' $$  
+#'   \begin{aligned} 
+#'   \text{Response} \sim \text{Distribution(Mean Response)} \\
+#'   Y_i \sim \text{Bernoulli}(p_i) \\
+#'   \text{logit}(p_i) = a + b \; x_i\\
+#' p_i = \text{logit}^{-1}(a + b \; x_i) = \dfrac {e^{a+b \; x_i}} {1+e^{a+b \; x_i}} \\
+#'   \end{aligned}
+#' $$
+#' 
+#' 
+#' ## Back to survival of Titanic passengers 
+#' 
+#' How many passengers travelled in each class?
+## ----collapse=T-----------------------------------------------------------------------------------------
+tapply(titanic$survived, titanic$class, length)
+
+#' 
+#' ## Back to survival of Titanic passengers 
+#' 
+#' How many survived?
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+tapply(titanic$survived, titanic$class, sum)
+
+#' 
+#' ## Back to survival of Titanic passengers 
+#' 
+#' What proportion survived in each class?
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+as.numeric(tapply(titanic$survived, titanic$class, mean))
+
+#' 
+#' ## Back to survival of Titanic passengers (package `dplyr`)
+#' 
+#' Arrange passenger survival according to class
+#' 
+#' ```
+#' library(dplyr)
+#' summarise(group_by(titanic, class, survived), count = n())`
+#' ```
+#' 
+#' 
+#' ## Back to survival of Titanic passengers (package `dplyr`)
+#' 
+#' Same manipulation using the pipe operator `%>%`
+#' 
+#' ```
+#' titanic %>%
+#'   group_by(class, survived) %>%
+#'   summarise(count = n())
+#' ```
+#' 
+#' ## Back to survival of Titanic passengers (package `dplyr`)
+#' 
+#' Arrange passenger survival according to class
+## ---- message=FALSE, collapse=TRUE, size='tinysize',echo=FALSE------------------------------------------
+library(dplyr)
+titanic %>%
+  dplyr::count(class, survived, sort = TRUE)
+
+#' 
+#' ## Or graphically...
+#' 
+## ---- echo = FALSE--------------------------------------------------------------------------------------
+titanic %>%
+  mutate(survived = as_factor(survived)) %>%
+  dplyr::count(class, survived) %>%
+  ggplot(aes(x = class, y = n, fill = survived)) +
+  geom_col()
+
+#' 
+#' 
+#' ## Fitting GLMs in R: `glm` function
+#' 
+## ----titanic_glm, echo=1--------------------------------------------------------------------------------
+titanic.glm <- glm(survived ~ class, data=titanic, family=binomial)
+library(broom)
+tidy(titanic.glm)
+
+#' 
+#' \alert{These estimates are on the logit scale!}
+#' 
+#' 
+#' ## Interpreting logistic regression outputs 
+#' 
+#' Parameter estimates on the logit scale:
+## ----tit_glm_coef, echo=FALSE,collapse=TRUE-------------------------------------------------------------
+coef(titanic.glm)
+
+#' 
+#' \alert{We need to back-transform} using the inverse logit function:  
+## ----tit_glm_invlogit, collapse=TRUE--------------------------------------------------------------------
+plogis(coef(titanic.glm)[1]) # crew survival probability
+
+#' 
+#' Looking at the data, the proportion of crew who survived is:
+## ----crew_surv,collapse=TRUE----------------------------------------------------------------------------
+sum(titanic$survived[titanic$class == "crew"]) / 
+  nrow(titanic[titanic$class == "crew", ])
+
+#' 
+#' ## Probability of survival for 1st class passengers? 
+#' 
+#' Needs to add intercept (baseline) to the parameter estimate:
+## ----first_surv, collapse=TRUE--------------------------------------------------------------------------
+plogis(coef(titanic.glm)[1] + coef(titanic.glm)[2])
+
+#' 
+#' Again this value matches the data: 
+## ----first_surv_data, collapse=TRUE---------------------------------------------------------------------
+sum(titanic$survived[titanic$class == "first"]) /   
+  nrow(titanic[titanic$class == "first", ])
+
+#' 
+#' ## Model interpretation using `effects` package
+#' 
+## ----tit_glm_effects------------------------------------------------------------------------------------
+library(effects)
+allEffects(titanic.glm)
+
+#' 
+#' ## Effects plot
+#' 
+## -------------------------------------------------------------------------------------------------------
+plot(allEffects(titanic.glm))
+
+#' 
+#' 
+#' 
+#' ## Recapitulating
+#' 
+#' 1. Import data: `read.table` or `read.csv`.
+#' 
+#' 2. Check data: `summary`.
+#' 
+#' 3. Plot data: `plot`.
+#' 
+#' 4. Fit model: `glm`. Don't forget to specify `family`.
+#'   
+#' 5. Examine models: `summary` or `tidy`.
+#'   
+#' 6. Use `plogis` to apply back-transformation (*invlogit*) to parameter estimates (`coef`). Alternatively, use `allEffects` from `effects` package.
+#' 
+#' 7. Plot model: `plot(allEffects(model))`. Alternatively, use package `visreg` (examples below).
+#' 
+#' 8. Examine residuals: check out your favorite textbook and the [vignette](https://cran.r-project.org/web/packages/DHARMa/vignettes/DHARMa.html) of the `DHARMa` package.
+#' 
+#' 
+#' # Did men have higher survival than women?
+#' 
+#' ## Plot first
+#' 
+## ---- echo = FALSE--------------------------------------------------------------------------------------
+titanic %>%
+  mutate(survived = as_factor(survived)) %>%
+  dplyr::count(sex, survived) %>%
+  ggplot(aes(x = sex, y = n, fill = survived)) +
+  geom_col()
+
+#' 
+#' ## Fit model
+#' 
+## ----tit_sex, echo=1------------------------------------------------------------------------------------
+titanic.sex <- glm(survived ~ sex, data = titanic, family = binomial)
+tidy(titanic.sex)
+
+#' 
+#' 
+#' ## Effects
+#' 
+## -------------------------------------------------------------------------------------------------------
+allEffects(titanic.sex)
+
+#' 
+#' ## Effects
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+plot(allEffects(titanic.sex))
+
+#' 
+#' 
+#' # Did women have higher survival and travelled more in first class?
+#' 
+#' 
+#' ## Let's look at the data
+#' 
+## ----tit_women------------------------------------------------------------------------------------------
+tapply(titanic$survived, list(titanic$class, titanic$sex), sum)
+
+#' 
+#' Mmmm...
+#' 
+#' 
+#' ## Fit model with both factors (interactions)
+#' 
+## ----tit_sex_class, echo=1------------------------------------------------------------------------------
+titanic.s.cl <- glm(survived ~ class * sex, data=titanic, family=binomial)
+tidy(titanic.s.cl)
+
+#' 
+#' 
+#' ## Effects
+#' 
+## ---- echo=TRUE-----------------------------------------------------------------------------------------
+allEffects(titanic.s.cl)
+
+#' 
+#' ## Effects
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+plot(allEffects(titanic.s.cl))
+
+#' 
+#' ## Conclusions
+#' 
+#' Use AIC to test the effect formally: 
+#' 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+AIC(glm(survived ~ 1, data = titanic, family = binomial)) # null model
+AIC(titanic.glm) # class effect
+AIC(titanic.sex) # sex effect
+AIC(titanic.s.cl) # interaction of sex and class
+
+#' 
+#' So, women had higher probability of survival than men, irrespective of the class.
+#' 
+#' 
+#' # Logistic regression for proportions
+#' 
+#' 
+#' ## Read Titanic data in different format
+#' 
+#' 
+## ----read_tit_short,collapse=TRUE-----------------------------------------------------------------------
+titanic.prop <- read.csv("dat/Titanic_prop.csv") %>%
+  mutate(across(where(is.character), as_factor))
+head(titanic.prop)
+
+#' 
+#' These are the same data, but compacted.
+#' 
+#' ## Bernoulli becomes a Binomial
+#' 
+#' $$  
+#'   \begin{aligned} 
+#'   \text{Response} \sim \text{Distribution(Mean Response)} \\
+#'   Y_i \sim \text{Binomial}(N_i,p_i) \\
+#'   \text{logit}(p_i) = a + b \; x_i\\
+#' p_i = \text{logit}^{-1}(a + b \; x_i) = \dfrac {e^{a+b \; x_i}} {1+e^{a+b \; x_i}} \\
+#'   \end{aligned}
+#' $$
+#' 
+#' ## Use cbind(n.success, n.failures) as response
+#' 
+## ----binom_prop, echo=1---------------------------------------------------------------------------------
+prop.glm <- glm(cbind(Yes, No) ~ Class, data = titanic.prop, 
+                                        family = binomial)
+tidy(prop.glm)
+
+#' 
+#' ## Effects
+## ----prop_glm_effects, echo=TRUE,collapse=TRUE----------------------------------------------------------
+allEffects(prop.glm)
+
+#' 
+#' Compare with former model based on raw data. Same results!
+#' 
+#' 
+#' 
+#' # Logistic regression with continuous predictors
+#' 
+#' 
+#' ## Read in GDP and infant mortality data (1998)
+#' 
+## ----read_gdp, collapse=TRUE----------------------------------------------------------------------------
+un <- read.csv("dat/UN_GDP_infantmortality.csv")
+un$X <- as.factor(un$X)
+names(un) <- c("country", "mortality", "gdp")
+
+#' 
+#' - mortality: Infant morality rate, infant deaths per 1000 live births.
+#' - gdp: GDP per capita, in US dollars.
+#' 
+#' ## Explore the data
+#' 
+## -------------------------------------------------------------------------------------------------------
+head(un)
+
+#' 
+#' ## Explore the data "Infant mortality (per 1000 births)"
+#' 
+## -------------------------------------------------------------------------------------------------------
+plot(mortality~gdp,data=un,main="")
+
+#' 
+#' 
+#' ## Fit model
+#' 
+## ---- echo=1--------------------------------------------------------------------------------------------
+gdp.glm <- glm(cbind(mortality, 1000 - mortality) ~ gdp, 
+               data = un, family = binomial)
+tidy(gdp.glm)
+
+#' 
+#' 
+#' ## Effects
+#' 
+## ----gdp_effects----------------------------------------------------------------------------------------
+allEffects(gdp.glm)
+
+#' 
+#' ## Effects plot
+#' 
+## -------------------------------------------------------------------------------------------------------
+plot(allEffects(gdp.glm), ylab = "mortality", main = "")
+
+#' 
+#' 
+#' ## Plot model and data (Infant mortality per 1000 births)
+## -------------------------------------------------------------------------------------------------------
+plot(mortality~gdp,data=un,main="")
+
+#' 
+#' ## Plot model using `visreg` package
+#' 
+## -------------------------------------------------------------------------------------------------------
+visreg(gdp.glm, scale = "response", ylab = "mortality")
+points(mortality/1000 ~ gdp, data = un)
+
+#' 
+#' 
+#' # Overdispersion
+#' 
+#' ## What is overdispersion?
+#' 
+#' * The variance is higher than expected from a Poisson or Binomial process
+#' 
+#' * Often due to pseudoreplication, dependence among statistical units
+#' 
+#' * To account for these cases, the trick is to consider 'quasi' functions that use the parameter $\phi$ to increase the expected variance (check out practical #1)
+#' 
+#' ## Testing for overdispersion (with `DHARMa` package)
+#' 
+## -------------------------------------------------------------------------------------------------------
+testOverdispersion(simulateResiduals(gdp.glm, refit = TRUE))
+
+#' 
+#' 
+#' ## Overdispersion in logistic regression with proportions
+#' 
+## -------------------------------------------------------------------------------------------------------
+gdp.overdisp <- glm(cbind(mortality, 1000 - mortality) ~ gdp, 
+               data = un, family = quasibinomial)
+tidy(gdp.overdisp)
+
+#' 
+#' 
+#' ## Mean estimates do not change after accounting for overdispersion
+#' 
+## -------------------------------------------------------------------------------------------------------
+allEffects(gdp.overdisp)
+
+#' 
+#' ## Mean estimates do not change after accounting for overdispersion
+#' 
+## -------------------------------------------------------------------------------------------------------
+allEffects(gdp.glm)
+
+#' 
+#' ## But standard errors do!
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+library(arm)
+par(mfrow=c(1,2))
+plot(mortality/1000 ~ gdp, data = un, main = "Binomial", pch=20)
+curve(plogis(coef(gdp.glm)[1] + coef(gdp.glm)[2]*x), from = 0, to = 40000, add = TRUE, lwd=3, col="red")
+curve(plogis(coef(gdp.glm)[1] - 2*se.coef(gdp.glm)[1] +
+               (coef(gdp.glm)[2] - 2*se.coef(gdp.glm)[2])*x), from = 0, to = 40000, add = TRUE, lwd=3, col="blue", lty=2)
+curve(plogis(coef(gdp.glm)[1] + 2*se.coef(gdp.glm)[1] +
+               (coef(gdp.glm)[2] + 2*se.coef(gdp.glm)[2])*x), from = 0, to = 40000, add = TRUE, lwd=3, col="blue", lty=2)
+
+plot(mortality/1000 ~ gdp, data = un, main = "Quasibinomial", pch=20)
+curve(plogis(coef(gdp.overdisp)[1] + coef(gdp.overdisp)[2]*x), from = 0, to = 40000, add = TRUE, lwd=3, col="red")
+curve(plogis(coef(gdp.overdisp)[1] - 2*se.coef(gdp.overdisp)[1] +
+               (coef(gdp.overdisp)[2] - 2*se.coef(gdp.overdisp)[2])*x), from = 0, to = 40000, add = TRUE, lwd=3, col="blue", lty=2)
+curve(plogis(coef(gdp.overdisp)[1] + 2*se.coef(gdp.overdisp)[1] +
+               (coef(gdp.overdisp)[2] + 2*se.coef(gdp.overdisp)[2])*x), from = 0, to = 40000, add = TRUE, lwd=3, col="blue", lty=2)
+
+#' 
+#' # GLMs for counts: Poisson regression
+#' 
+#' 
+#' 
+#' ## Types of response variable
+#' 
+#' - Gaussian: `lm`
+#' 
+#' - Bernoulli/Binomial: `glm` (family `binomial/quasibinomial`)
+#' 
+#' - Counts: `glm` (family `poisson/quasipoisson`)
+#' 
+#' 
+#' 
+#' ## Poisson regression
+#' 
+#' - \alert{Discrete} response variable: Counts (0, 1, 2, 3...)
+#' 
+#' - Link function: `log`
+#' 
+#' $$
+#'   \begin{aligned} 
+#'   \text{Response} \sim \text{Distribution(Mean Response)} \\
+#'   Y_i \sim \text{Poisson}(\lambda_i) \\
+#'   \log(\lambda_i) = a + b \; x_i \\  
+#'   \lambda_i = e^{a+b \; x_i} \\ 
+#'   \end{aligned} 
+#' $$
+#' 
+#' 
+#' 
+#' ## Example dataset: Seedling counts in $0.5 m^2$ quadrats
+#' 
+## -------------------------------------------------------------------------------------------------------
+seedl <- read.csv("dat/seedlings.csv")
+names(seedl)
+
+#' 
+#' - Light is the proportion of global solar radiation (GSF Global Site Factor)
+#' 
+#' 
+#' ## Explore data
+#' 
+## -------------------------------------------------------------------------------------------------------
+head(seedl)
+
+#' 
+#' ## Explore data
+#' 
+## ---- collapse=TRUE-------------------------------------------------------------------------------------
+table(seedl$count)
+
+#' 
+#' ## Explore data
+#' 
+## -------------------------------------------------------------------------------------------------------
+hist(seedl$count, main = "")
+
+#' 
+#' ## Relationship between Nseedlings and light?
+#' 
+## -------------------------------------------------------------------------------------------------------
+plot(seedl$light, seedl$count, xlab = "Light (GSF)", ylab = "Seedlings")
+
+#' 
+#' 
+#' 
+#' ## Let's fit a GLM (Poisson regression)
+#' 
+## -------------------------------------------------------------------------------------------------------
+seedl.glm <- glm(count ~ light, data = seedl, family = poisson)
+tidy(seedl.glm)
+
+#' 
+#' ## Does light explain variation in counts
+#' 
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+AIC(seedl.glm) # model with light
+AIC(glm(count ~ 1, data = seedl, family = poisson)) # null model
+
+#' 
+#' Should consider multimodel inference...
+#' 
+#' ## Interpreting Poisson regression output
+#' 
+#' Parameter estimates (log scale):
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+coef(seedl.glm)
+
+#' 
+#' Let's back-transform the intercept for $light = 0$ to get corresponding number of seedlings
+## ----collapse=TRUE--------------------------------------------------------------------------------------
+exp(coef(seedl.glm)[1])
+
+#' 
+#' 
+#' ## What is the relationship between Nseedlings and light? Use `visreg` package
+#' 
+## -------------------------------------------------------------------------------------------------------
+visreg(seedl.glm, scale = "response")
+
+#' 
+#' # Poisson regression: Overdispersion
+#' 
+#' 
+#' ## Always check overdispersion with count data
+#' 
+## ---- fig.width=5---------------------------------------------------------------------------------------
+testOverdispersion(simulateResiduals(seedl.glm, refit = TRUE))
+
+#' 
+#' 
+#' ## Accounting for overdispersion in count data
+#' 
+#' Use family `quasipoisson`
+#' 
+## -------------------------------------------------------------------------------------------------------
+seedl.overdisp <- glm(count ~ light, data = seedl, family = quasipoisson)
+tidy(seedl.overdisp)
+
+#' 
+#' 
+#' ## Mean estimates do not change after accounting for overdispersion
+#' 
+## ---- collapse=TRUE-------------------------------------------------------------------------------------
+allEffects(seedl.overdisp)
+allEffects(seedl.glm)
+
+#' 
+#' 
+#' ## Standard errors do not change here
+#' 
+## ---- echo=FALSE, fig.width=6---------------------------------------------------------------------------
+par(mfrow=c(1,2))
+visreg(seedl.overdisp, scale = "response")
+visreg(seedl.glm, scale = "response")
+
+#' 
+#' ## GLMs in a nutshell
+#' 
+#' | **Distribution**  | **Link**  | **Link$^{-1}$**  | **Use for** |  **R syntax**
+#' |---------------+---------------+------------------+----------+----------| 
+#' | normal | identity | $1$ | real values | `lm()`
+#' | poisson  | log | $\exp$ | counts | `glm(,family=poisson)`
+#' | binomial  | logit | $1/(1+\exp(-x))$ | binary, proportions | `glm(,family=binomial)`
+#' 
+#' 
+#' ## Textbooks
+#' 
+## ---- out.width = '6cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/textbooks3.png')    
+
+#' 
+#' 
+#' 
+#' 
+#' # Practical #1 
+#' 
+#' # This Class 
+#' 
+#' ## On our plate 
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference  
+#' * Introduction to Bayesian inference
+#' * Generalized Linear Models (GLMs)
+#' * \alert{Generalized Additive Models (GAMs)}   
+#' * Mixed Effect Models
+#' 
+#' 
+#' # Generalized Additive Models (GAMs)
+#' 
+#' ## Courses
+#' 
+#' * [Generalized Additive Models in R: A Free Interactive Course](https://noamross.github.io/gams-in-r-course/) by Noam Ross. A friendly introduction requiring only basic knowledge of R and linear regression. 4-5 hours of slides and interactive exercises. 
+#' 
+#' * Materials from a [workshop on GAMs](https://noamross.github.io/mgcv-esa-2018/slides.html) given by Noam Ross and colleagues. 
+#' 
+#' ## Textbooks
+#' 
+## ---- out.width = '6cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/textbooks4.png')
+
+#' 
+#' 
+#' # This Class
+#' 
+#' ## On our plate
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference
+#' * Introduction to Bayesian inference
+#' * Generalized Linear Models (GLMs)
+#' * Generalized Additive Models (GAMs)
+#' * \alert{Mixed Effect Models}
+#' 
+#' 
+#' # Mixed effect models
+#' 
+#' ## What are random effects?
+#' 
+#' * \alert{Mixed models} include both fixed and random effects
+#' 
+#' * Random effects are statistical parameters that attempt to \alert{explain noise caused by sub-populations} of the population you are trying to model
+#' 
+#' * A random-effect model assumes that the dataset being analysed consists of \alert{a hierarchy of different populations} whose differences relate to that hierarchy
+#' 
+#' * Measurement that come \alert{in groups}
+#' 
+#' 
+#' # Your turn
+#' 
+#' ## Question
+#' 
+#' * Come up with examples of clusters or groups
+#' 
+#' # Solution
+#' 
+#' ## Clusters might be:
+#' 
+#' * Classrooms within schools
+#' * Students within classrooms
+#' * Chapters within books
+#' * Individuals within populations
+#' * Populations within species
+#' * Trajectories within individuals
+#' * Fishes within tanks
+#' * Frogs within ponds
+#' * PhD applicants in doctoral schools
+#' * Nations in continents
+#' * Sex or age are not clusters per se (if we were to sample again, we would take the same levels, e.g. male/female and young/old)
+#' 
+#' 
+#' ## Why do we need random effects?
+#' 
+#' * Model the clustering itself.
+#' 
+#' * Interested in variance components (environmental vs. genetic variance)
+#' 
+#' * Control for bias due to pseudoreplication (time, space, individual)
+#' 
+#' 
+#' ## McElreath's explanation of multilevel models
+#' 
+#' * Fixed-effect models have amnesia.
+#' 
+#' * Every new cluster (individual, species, classroom) is a new world.
+#' 
+#' * No information passed among clusters.
+#' 
+#' * Multilevel models remember and pool information. They have memory.
+#' 
+#' * Properties of clusters come from a population.
+#' 
+#' * If previous clusters improve your guess about a new cluster, you want to use pooling.
+#' 
+#' 
+#' 
+#' ## Universality of the allometric relationship?
+#' 
+## ---- out.width = '7cm',out.height='5cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/pdm.png')    
+
+#' * 33 species monitored on the field at CEFE
+#' * Courtesy of Pr Eleni Kazakou.
+#' 
+#' ## Inspect the data, for 4 species at random
+## ---- include=FALSE-------------------------------------------------------------------------------------
+# On lit le jeu de données à analyser et on le nettoie
+VMG <- read.table("dat/VMG.csv", header=TRUE, dec= ".", sep =";")
+VMG$Sp <- as.factor(VMG$Sp)
+
+# crée crée un vecteur contenant le nb de graines (en log)
+y <- log(VMG$NGrTotest)
+
+# crée un vecteur contenant la biomass
+x <- VMG$Vm
+
+# crée un vecteur contenant le nom des espèces
+Sp <- VMG$Sp
+
+# crée un vecteur contenant le numéro des espèces
+species <- as.numeric(Sp)
+
+# nombre d'espèces
+nbspecies <- length(levels(Sp)) # ou bien length(unique(species))
+
+# nombre de mesures
+n <- length(y)
+
+dat <- data.frame(Biomass = x,
+           nb_grain = y,
+           Species = Sp)
+
+#' 
+## ---- echo = FALSE, out.width = '12cm', out.height = '7cm'----------------------------------------------
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
+
+#' 
+#' ## Pick 4 other species, at random
+#' 
+## ---- echo = FALSE, out.width = '12cm', out.height = '7cm'----------------------------------------------
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
+
+#' 
+#' ## Yet another 4 other species
+#' 
+## ---- echo = FALSE, out.width = '12cm', out.height = '7cm'----------------------------------------------
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
+
+#' 
+#' 
+#' ## Fixed or random?
+#' 
+#' - Factors can either be fixed or random
+#' 
+#' - A factor is \alert{fixed} when the levels under study are the only levels of interest
+#'     - If we were to sample again, we would take the same factor levels (sex, age)
+#' 
+#' - A factor is \alert{random} when the levels under study are a random sample from a larger population and the goal of the study is to make a statement regarding the larger population
+#'     - If we were to sample again, we would not necessarily take the same factor levels (individuals, species, ...)
+#' 
+#' 
+#' ## GLM formulation
+#' 
+#' $$
+#' \begin{aligned}
+#' Y_i \sim \text{Distribution(Mean Response}_i\text{)} \\
+#' \text{Mean Response}_i = \beta_0 + \beta_1 \; x_{i1} + \ldots +  \beta_P \; x_{iP}\\
+#' \end{aligned}
+#' $$
+#' 
+#' ## GL\alert{M}M formulation
+#' 
+#' $$
+#' \begin{aligned}
+#' Y_{i{\color{red}{j}}} \sim \text{Distribution(Mean Response}_{i{\color{red}{j}}}\text{)} \\
+#' \text{Mean Response}_{i{\color{red}{j}}} = \beta_{0\color{red}{j}} +  \beta_1 \; x_{i1} + \ldots +  \beta_P \; x_{iP}\\
+#' \beta_{0{\color{red}{j}}} \sim \text{Normal}(\mu_{group},\sigma^2_{group})\\
+#' \end{aligned}
+#' $$
+#' 
+#' 
+#' 
+#' 
+#' ## Model fitting in R
+#' 
+#' * Linear Mixed Models (LMMs) and Generalized Linear Mixed Models (GLMMs)
+## ----echo=TRUE, eval=FALSE------------------------------------------------------------------------------
+## library(lme4)
+## my_LMM <- lmer(y ~ x + (1 | group)) # LMM
+## my_GLMM <- glmer(y ~ x + (1 | group), family = Distribution) # GLMM
+
+#' 
+#' * `x` is the \alert{fixed} factor(s)
+#' * `1` is the \alert{random} factor(s), here the intercept
+#' * `group` is for the \alert{grouping} variable
+#' 
+#' 
+#' ## Model fitting in practice?
+#' 
+## ---- out.width = '7cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/lemur.jpg')    
+
+#' 
+#' 
+#' 
+#' ## Back to the plant example
+#' 
+#' $$
+#' \begin{aligned}
+#' Y_{i,{\color{red}{{species}}}} \sim \text{Normal(Mean Response}_{i,{\color{red}{{species}}}},\sigma^2_\text{residual)} \\
+#' \text{Mean Response}_{i,{\color{red}{{species}}}} = \beta_{0{\color{red}{species}}} +  \beta_1 \; x_{i}\\
+#' \beta_{0{\color{red}{{species}}}} \sim \text{Normal}(\mu_{\color{red}{sp}},\sigma^2_{\color{red}{sp}})\\
+#' \end{aligned}
+#' $$
+#' 
+#' 
+#' ## Back to the plant example
+#' 
+#' Fit \alert{one} linear model, with no distinction of species: \alert{complete pooling}
+#' 
+## ---- echo=TRUE, message=FALSE, warning=FALSE-----------------------------------------------------------
+allom.lm <- lm (nb_grain ~ Biomass,dat)
+tidy(allom.lm)
+
+#' ## Back to the plant example
+#' 
+#' Fit \alert{one} linear model, with no distinction of species: \alert{complete pooling}
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+grid = seq(min(dat$Biomass),max(dat$Biomass),length=100)
+fitted = coef(allom.lm)[1] + coef(allom.lm)[2] * grid
+plot(grid,fitted,xlab='biomass',ylab='nb_grain',main='',type='l',lwd=3,col='red',xlim=c(0,40),ylim=c(0,11))
+points(dat$Biomass,dat$nb_grain)
+
+#' 
+#' ## Back to the plant example
+#' 
+#' Fit \alert{as many} linear models as we have species: \alert{no pooling}
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+  current_species = levels(dat$Species)[1]
+  dat_species = subset(dat,Species==current_species)
+  current_allom.lm <- lm(nb_grain ~ Biomass,dat_species)
+  grid = seq(min(dat_species$Biomass),max(dat_species$Biomass),length=100)
+  fitted = coef(current_allom.lm)[1] + coef(current_allom.lm)[2] * grid
+  plot(grid,fitted,xlab='biomass',ylab='nb_grain',main='',type='l',lwd=3,col=1,xlim=c(0,40),ylim=c(0,11))
+    points(dat_species$Biomass,dat_species$nb_grain,col=1)
+for (i in 2:nbspecies){
+  current_species = levels(dat$Species)[i]
+  dat_species = subset(dat,Species==current_species)
+  current_allom.lm <- lm(nb_grain ~ Biomass,dat_species)
+  grid = seq(min(dat_species$Biomass),max(dat_species$Biomass),length=100)
+  fitted = coef(current_allom.lm)[1] + coef(current_allom.lm)[2] * grid
+  lines(grid,fitted,xlab='biomass',ylab='nb_grain',main='',type='l',lwd=3,col=i)
+  points(dat_species$Biomass,dat_species$nb_grain,col=i)
+}
+
+#' 
+#' 
+#' ## Back to the plant example
+#' 
+#' Fit linear \alert{mixed} model, with species as a random effect on the \alert{intercept}: \alert{partial pooling}
+#' 
+## ---- echo=TRUE, message=FALSE, warning=FALSE-----------------------------------------------------------
+library(lme4)
+allom.lmm <- lmer(nb_grain ~ Biomass + (1 | Species),dat)
+allom.lmm
+
+#' 
+#' ## Back to the plant example
+#' 
+#' Fit linear \alert{mixed} model, with species as random effect on both \alert{intercept} and \alert{slope}: \alert{partial pooling}
+#' 
+## ---- echo=TRUE, message=FALSE, warning=FALSE-----------------------------------------------------------
+allom.lmm2 <- lmer (nb_grain ~ Biomass + (1 + Biomass | Species), dat)
+allom.lmm2
+
+#' 
+#' ## Back to the plant example
+#' 
+#' ..., with species as random effect on both intercept and slope, \alert{without correlation}
+#' 
+## ---- echo=TRUE, message=FALSE, warning=FALSE-----------------------------------------------------------
+allom.lmm3 <- lmer(nb_grain ~ Biomass + (1 | Species) + (0 + Biomass | Species), dat)
+allom.lmm3
+
+#' 
+#' 
+#' ## 'Old school' linear models, complete pooling vs. no pooling
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+df_no_pooling <- lmList(nb_grain ~ Biomass | Species, dat) %>% 
+  coef() %>% 
+  rownames_to_column("Species") %>% 
+  dplyr::rename(Intercept = `(Intercept)`, Slope = Biomass) %>% 
+  add_column(Model = "No pooling") 
+# head(df_no_pooling)
+
+# Fit a model on all the data pooled together
+m_pooled <- lm(nb_grain ~ Biomass, dat) 
+
+# Repeat the intercept and slope terms for each participant
+df_pooled <- data_frame(
+  Model = "Complete pooling",
+  Species = dat$Species,
+  Intercept = coef(m_pooled)[1], 
+  Slope = coef(m_pooled)[2])
+
+ df_pooled =  mutate_if(df_pooled,is.factor, as.character)
+
+#head(df_pooled)
+
+# Join the raw data so we can use plot the points and the lines.
+df_models <- bind_rows(df_pooled, df_no_pooling) %>% 
+  left_join(dat, by = "Species")
+
+p_model_comparison <- df_models %>% 
+  filter(Species %in% c("EROCIC","CONSUM","ARIROT","AVEBAR")) %>%
+  ggplot() + 
+  aes(x = Biomass, y = nb_grain) + 
+  # Set the color mapping in this layer so the points don't get a color
+  geom_abline(aes(intercept = Intercept, slope = Slope, color = Model),
+              size = .75) + 
+  geom_point() +
+  facet_wrap(~Species) +
+  labs(x = "biomass", y = "nb of grains") + 
+  #scale_x_continuous(breaks = 0:4 * 2) + 
+  # Fix the color palette 
+  scale_color_brewer(palette = "Dark2") + 
+  theme(legend.position = "top")
+
+p_model_comparison
+
+#' 
+#' ## Linear \alert{mixed} model, with species as a random effect on the \alert{intercept}
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+m <- lmer (nb_grain ~ Biomass + (1 | Species),dat)
+# Make a dataframe with the fitted effects
+df_partial_pooling <- coef(m)[["Species"]] %>% 
+  rownames_to_column("Species") %>% 
+  as_tibble() %>% 
+  dplyr::rename(Intercept = `(Intercept)`, Slope = Biomass) %>% 
+  add_column(Model = "Partial pooling")
+
+#head(df_partial_pooling)
+
+df_models <- bind_rows(df_pooled, df_no_pooling, df_partial_pooling) %>% 
+  left_join(dat, by = "Species") %>%
+  as_tibble() %>%
+  mutate(Model = as_factor(Model),
+         Species = as_factor(Species))
+  
+df_models %>% 
+  filter(Species %in% c("EROCIC","CONSUM","ARIROT","AVEBAR")) %>%
+  ggplot() + 
+  aes(x = Biomass, y = nb_grain) + 
+  geom_abline(aes(intercept = Intercept, 
+                  slope = Slope, 
+                  color = Model),
+              size = .75) + 
+  geom_point() +
+  facet_wrap(~Species) +
+  labs(x = "biomass", y = "nb of grains") + 
+  scale_color_brewer(palette = "Dark2") + 
+  theme(legend.position = "top")
+
+#' 
+#' 
+#' # What about a Bayesian approach?
+#' 
+#' ## Model with **complete data pooling**
+#' 
+#' Likelihood for measurement $i$ in species $j$:
+#' $$\text{number.seeds}_{ij} = a + b \; \text{biomass}_{ij} + \epsilon_{ij}$$
+#' with $\epsilon_{ij} \sim \text{Normal}(0,\sigma^2)$
+#' 
+#' Alternatively:
+#' $$\text{number.seeds}_{ij} \sim \text{Normal}(a + b \; \text{biomass}_{ij},\sigma^2)$$
+#' 
+#' Priors:
+#' $$a,b \sim \text{Normal}(0,1000)$$
+#' $$\sigma \sim \text{Uniform}(0,100)$$
+#' 
+#' # Bayesian linear regression - in Jags
+#' 
+#' ## Read in and manipulate data
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+# read in data
+VMG <- read.table("dat/VMG.csv", header=TRUE, dec= ".", sep =";")
+VMG$Sp <- as.factor(VMG$Sp)
+# nb of seeds (log)
+y <- log(VMG$NGrTotest)
+# biomass
+x <- VMG$Vm
+# species name
+Sp <- VMG$Sp
+# species label
+species <- as.numeric(Sp)
+# species name
+nbspecies <- length(levels(Sp))
+# total nb of measurements 
+n <- length(y)
+
+#' 
+#' ## Implement the model in Jags
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+model <- 
+paste("
+model{
+for(i in 1:n){
+	y[i] ~ dnorm(mu[i],tau.y)
+	mu[i] <- a+b*x[i]
+	}
+tau.y<-1/(sigma.y*sigma.y)
+sigma.y~dunif(0,100)
+a~dnorm(0,0.001)
+b~dnorm(0,0.001)
+}
+")
+writeLines(model,"pooling.bug")
+
+#' 
+#' ## Prepare ingredients for running Jags
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+# data
+allom.data <- list(y=y,n=n,x=x)
+
+# initial values
+init1<-list(a=rnorm(1), b=rnorm(1),sigma.y=runif(1))
+init2<-list(a=rnorm(1), b=rnorm(1),sigma.y=runif(1))
+inits<-list(init1,init2)
+
+# parameters to be estimated
+allom.parameters <- c("a", "b", "sigma.y")
+
+#' 
+#' ## Run Jags!
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+allom.1 <- jags(allom.data,inits,allom.parameters,
+                        n.iter = 2500,model.file="pooling.bug", 
+                        n.chains = 2, n.burn = 1000)
+
+#' 
+#' ## Display results
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+allom.1
+
+#' 
+#' ## Output (focus on 4 species only)
+#' 
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+library(lattice)
+dataa <- data.frame(x = x, y = y, Sp = Sp) %>% filter(Sp %in% c("ARIROT","AVEBAR","CONSUM","EROCIC"))
+xyplot(y ~ x | Sp, data = dataa,
+       xlab = "Biomass", ylab = "Nb seeds",main="complete pooling (no species effect)",
+       panel = function(x, y) {
+           panel.xyplot(x, y)
+           panel.abline(a=c(4.63739,0.19660),col='red',lwd=3)
+       })
+
+#' 
+#' # Models with mixed effects
+#' 
+#' ## Varying-intercept (partial pooling) model
+#' 
+## ---- fig.align='center',echo=FALSE---------------------------------------------------------------------
+knitr::include_graphics('img/varyingint.png')    
+
+#' 
+#' ## Varying-intercept or partial pooling model
+#' 
+#' Likelihood for measurement $i$ in species $j$:
+#' $$\text{number.seeds}_{ij} = a_j + b \; \text{biomass}_{ij} + \epsilon_{ij}$$
+#' with $a_{j} \sim \text{Normal}(\mu_a,\sigma_a^2)$ species random effect that captures inter-species variability
+#' 
+#' and $\epsilon_{ij} \sim \text{Normal}(0,\sigma^2)$ residual variance
+#' 
+#' Priors:
+#' $$\mu_a,b \sim \text{Normal}(0,1000)$$
+#' $$\sigma, \sigma_a \sim \text{Uniform}(0,100)$$
+#' 
+#' ## Varying-intercept model in Jags
+#' 
+## ----echo=TRUE, message=FALSE, warning=FALSE------------------------------------------------------------
+model <- paste("
+model{
+  for (k in 1:n){
+    y[k] ~ dnorm (y.hat[k], tau.y)
+    y.hat[k] <- a[species[k]] + b *x[k]}
+  tau.y <- pow(sigma.y, -2)
+  sigma.y ~ dunif (0, 100)
+  for (j in 1:nbspecies){ 
+    a[j] ~ dnorm(mu.a, tau.a)}
+  mu.a ~ dnorm (0, .001)
+  tau.a <- pow(sigma.a, -2)
+  sigma.a ~ dunif (0, 100)
+  b ~ dnorm (0, .001)    
+}
+")
+writeLines(model,"varint.bug")
+
+#' 
+## -------------------------------------------------------------------------------------------------------
+allom.data <- list(n = n,
+                   nbspecies = nbspecies,
+                   x = x,
+                   y = y,
+                   species = species)
+
+init1 <- list(a=rnorm(nbspecies), b=rnorm(1), mu.a=rnorm(1),sigma.y=runif(1), sigma.a=runif(1))
+init2 <- list(a=rnorm(nbspecies), b=rnorm(1), mu.a=rnorm(1),sigma.y=runif(1), sigma.a=runif(1))
+inits <- list(init1,init2)
+allom.parameters <- c ("a", "b", "mu.a","sigma.y", "sigma.a")
+# run JAGS
+allom.2 <- jags(allom.data,
+                        inits,
+                        allom.parameters, n.iter = 2500, n.chains = 2, n.burn = 1000,
+                        model.file="varint.bug")
+allom.2
+
+## graph (correction BUG 2015)
+acoef.sp <- allom.2$BUGSoutput$summary[1:33,1]
+bcoef <- allom.2$BUGSoutput$summary[34,1]
+
+# varying-intercept predicted values
+yfit <- rep(0,length=n)
+for (k in 1:n){yfit[k] <- acoef.sp[species[k]] + bcoef * x[k]}
+
+# pooling model (no species effect) predicted values
+ylinear <- rep(0,length=n)
+for (k in 1:n){ylinear[k] <- 4.63739 + 0.19660 * x[k]}
+
+## define function to fit observed and predicted values in species-specific panels
+panelfun2 <-
+  function(x, y, subscripts, ...){
+           llines(x, lmhat[subscripts], type="p") # observed data
+           llines(x, hat[subscripts], type="l", lty=1,col='green',lwd=3) # varying-intercept fit
+           llines(x, hat2[subscripts], type="l", lty=1,col='red',lwd=3) # pooling model (no species effect) fit
+}
+
+# assign observed and predicted values
+lmhat <- y # observed data
+hat <- yfit # varying-intercept fit
+hat2 <- ylinear # pooling model (no species effect) fit
+
+#' 
+#' ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying-intercept}
+#' 
+## ---- echo=FALSE, out.width="70%"-----------------------------------------------------------------------
+dataa <- data.frame(x = x, y = y, Sp = Sp) 
+# png("img/xyplot1.png", height = 7, width = 9, unit = "in", res = 300)
+# xyplot(y ~ x | Sp, data = dataa, panel = panelfun2,
+#        xlab="biomass",
+#        ylab="nb graines",
+#        key = list(text = list(c("varying-intercept", "pooling")),
+#        lines = list(lwd = 3, col = c("green", "red"),
+#        type = c("l", "l"))))
+# dev.off()
+knitr::include_graphics('img/xyplot1.png')
+
+#' 
+#' ## Varying intercept, varying slope model
+#' 
+## ----echo=FALSE, fig.align='center', message=FALSE, warning=FALSE---------------------------------------
+knitr::include_graphics('img/varyingintslo.png')
+
+#' 
+## ----message=FALSE, warning=FALSE, include=FALSE--------------------------------------------------------
+allom.data <- list (n=n,species=species,x=x,y=y,nbspecies=nbspecies)
+
+# on specifie le modele
+model <-
+paste("
+# varying-intercept, varying-slope allometry model
+# with Vm as a species predictor
+
+model {
+  for (k in 1:n){
+    y[k] ~ dnorm (y.hat[k], tau.y)
+    y.hat[k] <- a[species[k]] + b[species[k]]*x[k]
+  }
+
+  tau.y <- pow(sigma.y, -2)
+  sigma.y ~ dunif (0, 100)
+
+  for (j in 1:nbspecies){
+    a[j] ~ dnorm (mu.a, tau.a)
+    b[j] ~ dnorm (mu.b, tau.b)
+  }
+
+  mu.a ~ dnorm (0, .0001)
+  tau.a <- pow(sigma.a, -2)
+  sigma.a ~ dunif (0, 100)
+
+  mu.b ~ dnorm (0, .0001)
+  tau.b <- pow(sigma.b, -2)
+  sigma.b ~ dunif (0, 100)
+
+}
+")
+writeLines(model,"varintvarslope.bug")
+
+init1 <- list (a=rnorm(nbspecies), b=rnorm(nbspecies), mu.a=rnorm(1),mu.b=rnorm(1),
+sigma.y=runif(1), sigma.a=runif(1), sigma.b=runif(1))
+init2 <- list (a=rnorm(nbspecies), b=rnorm(nbspecies), mu.a=rnorm(1),mu.b=rnorm(1),
+sigma.y=runif(1), sigma.a=runif(1), sigma.b=runif(1))
+inits<-list(init1,init2)
+allom.parameters <- c ("a", "b", "mu.a","mu.b", "sigma.y", "sigma.a", "sigma.b")
+
+allom.3 <- jags(allom.data,inits,allom.parameters, n.iter = 2500,model.file="varintvarslope.bug", n.chains = 2, n.burn = 1000)
+allom.3
+
+## graph (correction BUG 2015)
+acoef.sp = allom.3$BUGSoutput$summary[1:33,1]
+bcoef.sp = allom.3$BUGSoutput$summary[34:66,1]
+
+yfit2 = rep(0,length=n)
+for (k in 1:n){yfit2[k] = acoef.sp[species[k]] + bcoef.sp[species[k]] * x[k]}
+
+# pooling model (no species effect) predicted values
+ylinear = rep(0,length=n)
+for (k in 1:n){ylinear[k] = 4.63739 + 0.19660 * x[k]}
+
+
+## define function to fit observed and predicted values in species-specific panels
+panelfun2 <-
+  function(x, y, subscripts, ...){
+           llines(x, lmhat[subscripts], type="p",col='black') # observed data
+           llines(x, hat[subscripts], type="l", lty=1,col='green',lwd=3) # varying-intercept fit
+           llines(x, hat2[subscripts], type="l", lty=1,col='red',lwd=3) # pooling model (no species effect) fit
+           llines(x, hat3[subscripts], type="l", lty=1,col='blue',lwd=3) # varying-intercept varying-slope fit
+}
+
+# assign observed and predicted values
+lmhat <- y # observed data
+hat <- yfit # varying-intercept fit
+hat2 <- ylinear # pooling model (no species effect) fit
+hat3 <- yfit2 # varying-intercept varying-slope fit
+
+#' 
+#' ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying intercept} vs \textcolor{blue}{varying intercept and slope}
+#' 
+## ---- echo=FALSE, out.width="70%"-----------------------------------------------------------------------
+# png("img/xyplot2.png", height = 7, width = 9, unit = "in", res = 300)
+# xyplot(y ~ x | Sp, panel=panelfun2,
+#        xlab="biomass",
+#        ylab="nb graines",
+#        key = list(text = list(c("varying-intercept/slope", "varying-intercept","pooling")),
+#        lines = list(lwd = 3, col = c("blue","green","red"),
+#        type = c("l", "l", "l"))))
+# dev.off()
+knitr::include_graphics('img/xyplot2.png')
+
+#' 
+#' 
+#' # Generalized Linear Mixed Models
+#' 
+#' ## Plant example was a \alert{LMM}, now let's explore a \alert{GLMM}
+#' 
+## ---- out.width = '8cm',out.height='7cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/NA_stork.png')    
+
+#' 
+#' ## White stork: Is breeding success affected by weather conditions?
+#' 
+## -------------------------------------------------------------------------------------------------------
+nbchicks = c(151,105,73,107,113,87,77,108,118,122,112,120,122,89,69,71,
+                                                  53,41,53,31,35,14,18)
+nbpairs = c(173,164,103,113,122,112,98,121,132,136,133,137,145,117,90,
+                                               80,67,54,58,39,42,23,23)
+temp = c(15.1,13.3,15.3,13.3,14.6,15.6,13.1,13.1,15.0,11.7,15.3,14.4,
+                14.4,12.7,11.7,11.9,15.9,13.4,14.0,13.9,12.9,15.1,13.0)
+rainfall = c(67,52,88,61,32,36,72,43,92,32,86,28,57,55,66,26,28,96,48,
+                                                           90,86,78,87)
+year = seq(1,length(nbchicks))
+
+#' 
+#' ## Standard GLM on proportions 
+#' 
+#' $$
+#' \begin{aligned}
+#' \text{nbchicks}_i \sim \text{Binomial(nbpairs}_i,p_i) \\
+#' \text{logit}(p_i) = \beta_0 + \beta_1 \; \text{temp}_{i} + \beta_2 \; \text{rainfall}_{i}\\
+#' \end{aligned}
+#' $$
+#' 
+#' ## Standard GLM on proportions in R 
+#' 
+## -------------------------------------------------------------------------------------------------------
+stork_glm <- glm(cbind(nbchicks,nbpairs-nbchicks) ~ temp + rainfall, 
+                                                  family = binomial)
+tidy(stork_glm)
+
+#' 
+#' 
+#' ## GLMM on proportions with year as a random effect
+#' 
+#' $$
+#' \begin{aligned}
+#' \text{nbchicks}_i \sim \text{Binomial(nbpairs}_i,p_i) \\
+#' \text{logit}(p_i) = \beta_{0i} + \beta_1 \; \text{temp}_{i} + \beta_2 \; \text{rainfall}_{i}\\
+#' \beta_{0i} \sim \text{Normal(}\mu_y,\sigma^2_{\text{y}})
+#' \end{aligned}
+#' $$
+#' 
+#' ## GLMM on proportions with year as a random effect in R
+#' 
+## -------------------------------------------------------------------------------------------------------
+m <- glmer(cbind(nbchicks,nbpairs-nbchicks) ~ temp + rainfall 
+                             + (1 | year), family = binomial)
+
+#' 
+#' ## GLMM on proportions with year as a random effect in R
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+m
+
+#' 
+#' ## Yearly random intercepts
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+dotplot(ranef(m,condVar=TRUE))
+
+#' 
+#' ## Calculate proportion of explained variance in GLMMs
+#' 
+## ---- out.width = '11cm',out.height='7cm',fig.align='center',echo=FALSE---------------------------------
+knitr::include_graphics('img/r2glmm.png')    
+
+#' 
+#' # Bonus: Generalized Additive Mixed Models!
+#' 
+#' ## Wild boar example
+#' 
+## ---- out.width = '7cm',out.height='5cm',fig.align='center',echo=FALSE----------------------------------
+knitr::include_graphics('img/boar.png')  
+dat <- read.table('dat/wboar.txt',header=T)
+dat[,1] <- as.factor(dat[,1])
+
+#' 
+#' ## Offspring weight vs. gestation duration (12 females at random)
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+dat %>%
+  filter(female_id %in% sample(68,12)) %>%
+  ggplot(aes(x = gestation, y = offspring_weight)) +
+  geom_point() + 
+  facet_wrap(~female_id) +
+  labs(x = 'duration of gestation (days)',
+       y = 'offspring weight (g)')
+
+#' 
+#' ## Offspring weight per year vs. gestation duration (all females)
+#' 
+## ---- echo=FALSE----------------------------------------------------------------------------------------
+dat %>%
+  filter(female_id %in% sample(68,12)) %>%
+  ggplot(aes(x = gestation, y = offspring_weight)) +
+  geom_point() + 
+  facet_wrap(~year) +
+  labs(x = 'duration of gestation (days)',
+       y = 'offspring weight (g)')
+
+#' 
+#' ## Is duration of gestation affecting offspring weight?
+#' 
+## -------------------------------------------------------------------------------------------------------
+library(lme4)
+m1 <- lmer(offspring_weight ~ gestation + as.factor(year) + (1|female_id), data = dat)
+m2 <- lmer(offspring_weight ~ gestation + (1|female_id), data = dat)
+m3 <- lmer(offspring_weight ~ 1 + (1|female_id), data = dat)
+m4 <- lmer(offspring_weight ~ as.factor(year) + (1|female_id), data = dat)
+AIC(m1, m2, m3, m4)
+
+#' 
+#' One single best model (by far), no need for multimodel inference
+#' 
+#' ## Best model parameter estimates
+#' 
+## -------------------------------------------------------------------------------------------------------
+m1
+
+#' 
+#' The intercept is negative, which is unusual for a weight...
+#' 
+#' ## GA\alert{M}M to the rescue!
+#' 
+## ---- include=FALSE-------------------------------------------------------------------------------------
+# subsetting dataset by year
+data2025 <- subset(dat,year==2010)
+data2026 <- subset(dat,year==2011)
+# get fitted values from model with linear effect of gestation
+grid <- seq(min(dat$gestation),max(dat$gestation),length=1000)
+param <- coef(summary(m1))
+predicted2025 <- param[1] + param[2] * grid + param[3]
+predicted2026 <- param[1] + param[2] * grid 
+# get fitted values from a gam model with a possibly non-linear effect of gestation
+# use of Simon Wood's trick, see http://goo.gl/6Jvkja
+dat$year <- as.factor(dat$year)
+dum <- rep(1,length(dat$offspring_weight))
+
+## -------------------------------------------------------------------------------------------------------
+library(mgcv)
+m1_gamm <- gam(offspring_weight~s(gestation,by=year)+
+                          s(female_id,bs='re',by=dum),data=dat)
+AIC(m1,m1_gamm)
+
+#' 
+#' ## Year 2010
+#' 
+## ---- echo=FALSE, fig.asp=0.8---------------------------------------------------------------------------
+newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2010',female_id='1',dum=0)
+pred2025 <- predict.gam(m1_gamm,newd)
+newd <- data.frame(gestation=seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),year='2011',female_id='1',dum=0)
+pred2026 <- predict.gam(m1_gamm,newd)
+plot(data2025$gestation,data2025$offspring_weight,xlab='gestation',ylab='offspring_weight',main='',ylim=c(-200,700))
+lines(grid,predicted2025,lwd=3,col='red')
+lines(seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),pred2025,lwd=3,col='blue')
+legend(50,600,c('GLMM','GAMM'),col=c('red','blue'),lty=1,lwd=3)
+
+#' 
+#' ## Year 2011
+#' 
+## ---- echo=FALSE, fig.asp=0.8---------------------------------------------------------------------------
+plot(data2026$gestation,data2026$offspring_weight,xlab='gestation',ylab='offspring_weight',main='',ylim=c(-200,700))
+lines(grid,predicted2026,lwd=3,col='red')
+lines(seq(min(dat$gestation),max(dat$gestation),length=length(dat$gestation)),pred2026,lwd=3,col='blue')
+legend(40,600,c('GLMM','GAMM'),col=c('red','blue'),lty=1,lwd=3)
+
+#' 
+#' 
+#' # Summary
+#' 
+#' ## Mixed models in a nutshell
+#' 
+#' * \alert{Shrinkage via pooling is desirable}. The no-pooling model overstates variation among clusters and makes the
+#' individual clusters look more different than they are (overfitting). The complete-pooling model simply ignores the variation among clusters (underfitting).
+#' 
+#' * We can \alert{generalize to a wider population}. Is there an allometry relationship between number of seeds and biomass?
+#' 
+#' * We may consider \alert{varying slopes}. We'd need to deal with correlations between intercept and slope random effects. Open a whole new world with spatial (or time) autocorrelation, phylogenetic regressions, quantitative genetics, network models.
+#' 
+#' * We may \alert{include predictors at the cluster level}. Imagine we know something about functional traits, and wish to determine whether some species-to-species variation in the allometry relationship is explained by these traits. 
+#' 
+#' ## Textbooks
+#' 
+## ---- out.width = '10cm',out.height='8cm',fig.align='center',echo=FALSE---------------------------------
+knitr::include_graphics('img/textbooks5.png')    
+
+#' 
+#' 
+#' # This Class 
+#' 
+#' ## What we studied 
+#' * Distributions and likelihoods
+#' * Hypothesis testing and multimodel inference  
+#' * Introduction to Bayesian inference
+#' * Generalized Linear Models (GLMs)
+#' * Generalized Additive Models (GAMs)   
+#' * Mixed Effect Models
+#' 
+#' ## This class in a nutshell (from Zuur et al. book)
+#' 
+## ---- out.width = '10cm',out.height='8cm',fig.align='center',echo=FALSE---------------------------------
+knitr::include_graphics('img/nutshell.png')    
+
+#' 
+#' # Practical #2
+#' 
+#' 
