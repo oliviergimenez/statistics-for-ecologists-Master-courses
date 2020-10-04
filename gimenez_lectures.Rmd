@@ -47,6 +47,13 @@ make_latex_decorator <- function(output, otherwise) {
 
 # Who's that guy?! 
 
+## Adorator of memes
+
+```{r echo=FALSE}
+knitr::include_graphics("img/love_stats_cats.jpg")
+```
+
+
 ## Olivier Gimenez
 * Senior scientist at CNRS, Montpellier - France
 * Trained as a statistician 
@@ -435,6 +442,13 @@ legend("topright",
 * **mean**: $\mu$ 
   * **variance**: $\sigma^2$ 
   * **in R**: ```rnorm```, ```dnorm```
+
+## Why do we love the Normal distribution 
+
+```{r echo = FALSE}
+knitr::include_graphics("img/paranormal.jpg")
+```
+
 
 ## Why do we love the Normal distribution 
 
@@ -1065,6 +1079,19 @@ pval # two−tailed p−value
 
 ```{r, out.width = '7cm',out.height='7cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/harry_pvalue.jpg')    
+```
+
+## Problems with hypothesis testing
+
+```{r echo=FALSE}
+knitr::include_graphics("img/moment_pvalue.jpg")
+```
+
+
+## Problems with hypothesis testing
+
+```{r echo=FALSE}
+knitr::include_graphics("img/try_again.jpg")
 ```
 
 
