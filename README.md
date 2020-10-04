@@ -1,6 +1,6 @@
 ## Statistics for ecologists
 
-The material for a course I give every year to Master students at University of Montpellier.
+You will find here the material for a course I give every year to Master students at University of Montpellier. 
 
 ### Topics covered
 
@@ -13,8 +13,12 @@ The material for a course I give every year to Master students at University of 
 
 ### How to use this repo?
 
-* Click on the `Code` green button at the top right of the page to create a copy of the repo within your own GitHub account (clone)
-* Alternately, click on the same green button and choose `Download ZIP` to download the repo to your computer
+* The PDF of the lecture slides can be downloaded [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_lectures.pdf) 
+* The practicals are [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical.pdf) and the solutions [there](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical_with_solutions.pdf)
+* The `R` codes I use in the lectures and the practicals are also provided [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_lectures.R) and [there](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical_with_solutions.R) respectively
+* To download the whole repo on your computer, click on the `Code` green button at the top right of the page and choose `Download ZIP`
+* Alternatively, click on same green button to create a copy of the repo within your own GitHub account (clone)
+
 
 ### Problem
 
