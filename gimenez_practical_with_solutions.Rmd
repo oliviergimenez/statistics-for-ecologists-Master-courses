@@ -1,0 +1,338 @@
+---
+title: "Practicals (with solutions)"
+author: "Olivier Gimenez"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+# Practical #1
+
+1. Use simulation to generate a data set of 100 covariate values from $X \sim \text{Normal}(20, \sigma = 2)$. Use a histogram to explore the distribution of $X$.
+
+```{r}
+X <- rnorm(100, 20, 2)
+X
+hist(X)
+```
+
+OK, looks normal to me, with mean 20 and some variability around it.
+
+2. Generate a Poisson rate from these values according to the relationship lambda=exp(-3+0.2*X). Have a look graphically to the relationship between $\lambda$ and $X$. Hint: You might want to order the values of $X$ using the R function `sort()`.
+
+```{r}
+lambda <- exp(-3 + 0.2 * X)
+plot(X,lambda, type="l")
+```
+
+Something went wrong... Yes, we need to order the X values!
+
+```{r}
+X <- sort(X)
+lambda <- exp(-3 + 0.2 * X)
+plot(X,lambda, type="l")
+```
+
+3. Use simulation to generate a data set of 100 response values from a Poisson distribution according to this rate $Y \sim \text{Poisson}(\lambda(X))$. Explore the distribution of $Y$ using a bar plot (`?barplot`). 
+
+```{r}
+Y <- rpois(100, lambda)
+Y
+```
+
+Explore the distribution of Y
+
+```{r}
+tab.Y <- table(Y)
+tab.Y
+barplot(tab.Y,col=rainbow(20),cex.axis=1.2,cex.names=1.2,main='') 	
+```
+
+
+4. Construct a data frame containing the covariate (X) and response (Y) data. Have a look to the first and last rows.
+
+```{r}
+dat <- data.frame(cbind(X,Y))
+head(dat)
+tail(dat)
+```
+
+5. Use a GLM with the appropriate structure to try and retrieve the parameters -3 and 0.2 from question 2.
+
+```{r}
+m <- glm(Y~X, family=poisson, dat)
+broom::tidy(m)
+```
+
+It looks as though the intercept and slope estimates are close to the values -3 and 0.2 we used to simulate the data.
+
+6. Increase sample size (multiply by 1000) and comment on the parameter estimates.
+
+```{r}
+N <- 100000
+X <- sort(rnorm(N, 20, 2))
+lambda <- exp(-3 + 0.2 * X)
+Y <- rpois(N, lambda)
+dat <- data.frame(cbind(X,Y))
+m <- glm(Y~X, family=poisson, dat)
+summary(m)
+```
+
+With increasing sample size, the estimates get much closer to the values we used to generate the data (i.e. the truth). That's an appealing property of maximum likelihood estimates.
+
+7. Overdispersion. We would like to do the same exercise with an overdispersed Poisson distribution. To do so, we need to generate data from a quasi-Poisson distribution. Interestingly, the negative-binomial (NB) distribution allows relaxing the Poisson assumption $E(Y)=V(Y)=\lambda$. There are several parameterizations for the NB distribution. Here, we will use $W \sim NB(\lambda,\phi)$ where $\lambda$ is the expected value as in the Poisson distribution and $\phi$ is the overdispersion parameter. From the NB properties, we have that the mean of $W$ is $\lambda$ while its variance is $\lambda + \lambda^2/\phi$. Therefore, a small value of $\phi$ means a large deviation from a Poisson distribution (the variance of $W$ is much larger than $\lambda$, which would also be the mean for a Poisson distribution), while as $\phi$ gets larger the NB looks more and more like a Poisson distribution (the term $\lambda^2/\phi$ tends to 0, and the mean and variance looks more and more alike). In R, we will specify:
+
+```{r}
+lambda = 2
+phi = 5
+n = 1000
+
+# simulate the response
+w_nb <- rnbinom(n,size=phi,mu=lambda)
+
+# recover the NB parameters from its mean and variance
+mean(w_nb) # lambda
+mean(w_nb)^2/(var(w_nb)-mean(w_nb)) # phi
+```
+
+Adopt the same approach as above to simulate data from a Poisson distribution with overdispersion parameter $\phi=0.1$. Inspect the residuals. Do they look ok to you? If not, fit a GLM with an appropriate structure. Have a look to the relationship between the response and the predictor for both models, without and with the overdispersion parameter (use the `visreg` from the package `visreg`). Is there any difference?
+
+```{r}
+N <- 1000
+X <- sort(rnorm(N, 20, 2))
+lambda <- exp(-3 + 0.2 * X)
+phi <- 0.1
+Y <- rnbinom(N,size=phi,mu=lambda)
+dat <- data.frame(cbind(X,Y))
+m <- glm(Y~X, family=poisson, dat)
+DHARMa::simulateResiduals(m, plot = TRUE)
+```
+
+Something is weird in the residuals, clearly the Poisson distribution does not seem to be appropriate for these data. Is it an overdispersion issue?
+
+```{r}
+simres <- DHARMa::simulateResiduals(m, refit = TRUE)
+DHARMa::testOverdispersion(simres)
+```
+
+Yes, overdispersion is significant. Let's fit a model with overdispersion (quasiPoisson distribution).
+
+```{r}
+m_quasi <- glm(Y~X, family=quasipoisson, dat)
+```
+
+```{r pois_overdisp_eff1, echo=FALSE}
+par(mfrow=c(1,2))
+visreg::visreg(m, scale = "response",main='Poisson')
+visreg::visreg(m_quasi, scale = "response",main='QuasiPoisson')
+```
+
+The uncertainty is bigger when overdispersion is accounted for. Overdispersion is often related to pseudoreplication. In brief, it means that there is some dependence among the statistical units (e.g., individuals). As a consequence, while you might think you have, say, a hundred individuals, it is actually (much) less in a statistical sense because some of them bring the same information due to their dependence (ressemblance) with each other. In turn, the confidence intervals are narrower than they should be. This issue is addressed by accounting for overdispersion with a quasiPoisson distribution, therefore explaining the wider confidence intervals.
+
+
+# Practical #2
+
+1. Relationship between tree diameter and height and LMM. You have data on 1000 trees from 10 plots, with 4 up to 392 trees per plot and several measurements taken on each tree. 
+
+```{r}
+# dbh is diameter at breast height (diameter of the trunk)
+trees <- read.table("trees.txt", header=TRUE)
+str(trees)
+head(trees)
+```
+
+Fit a linear model with height as the response variable and dbh as a predictor. Plot the data on a graph, and add the regression line (use `abline`).
+
+```{r}
+lm.simple <- lm(height ~ dbh, data = trees)
+summary(lm.simple)
+```
+
+```{r}
+plot(height ~ dbh, data=trees, las=1, xlab="DBH (cm)", ylab="Height (m)", ylim = c(0, 50), main = "Single intercept")
+abline(lm(height ~ dbh, data=trees), lwd=4, col="red")
+```
+
+Now we have only one intercept. What if allometry varies among plots? Fit a linear model with a different intercept for each plot, and inspect the results with `broom::tidy`. Try and represent the 20 regression lines on the same graph.
+
+```{r}
+lm.interc <- lm(height ~ factor(plot) + dbh, data = trees)
+broom::tidy(lm.interc)
+```
+
+```{r}
+plot(trees$dbh[trees$plot==1], trees$height[trees$plot==1], 
+     pch=20, las=1, xlab="DBH (cm)", ylab="Height (m)", col=1,
+     ylim=c(0,50), main = "Different intercept for each plot")
+abline(a=coef(lm.interc)[1], b=coef(lm.interc)[11], col=1, lwd=2) # plot 1
+for(i in 2:10){
+  points(trees$dbh[trees$plot==i], trees$height[trees$plot==i], pch=20, col=i)
+  abline(a=coef(lm.interc)[1] + coef(lm.interc)[i], b=coef(lm.interc)[11], col=i, lwd=2) # plot 2-10
+}
+```
+
+How many parameters are estimated in the model pooling all plots together vs. the model considering a different intercept for each plot?
+
+The answer is 3 (intercept, slope, residual variance) vs. 12 (10 intercepts, 1 slope, 1 residual variance).
+
+Mixed models enable us to make a compromise between the two models by accounting for plot-to-plot variability.
+
+Recall that:
+$$
+  \begin{aligned}  
+  y_{ij} \sim N(\mu_{ij},\sigma^2) \\
+  \mu{ij} = a_{j} + b x_{i} \\  
+  a_{j} \sim N\left( \mu_a,\tau^2 \right) \\  
+  \end{aligned}  
+$$
+
+How does this GLMM formulation translate into in our example? In our example, it translates into:
+
+$$
+  \begin{aligned}  
+  \text{Height}_{ij} \sim N(\mu_{ij},\sigma^2) \\
+  \mu_{ij} = a_{j} + b \;DBH_{i} \\  
+  a_{j} \sim N\left( \mu_a,\tau^2 \right) \\
+  j = 1, \ldots, 10 \; \text{(plots)} \\  
+  \end{aligned}  
+$$
+
+We have the gradient:
+
+- **complete pooling**: Single overall intercept.
+    - `lm (height ~ dbh)`
+
+- **no pooling**: One *independent* intercept for each plot.
+    - `lm (height ~ dbh + factor(plot))`
+
+- **partial pooling**: Inter-related intercepts.
+    - `lmer(height ~ dbh + (1 | plot))`
+
+
+Fit model with plot as a random effect. Comment on the outputs. 
+
+```{r}
+library(lme4)
+mixed <- lmer(height ~ dbh + (1|plot), data = trees)
+summary(mixed)
+```
+
+The following are the important pieces:
+
+```{}
+Random effects:
+ Groups   Name        Variance Std.Dev.
+ plot     (Intercept) 19.834   4.454   
+ Residual              8.325   2.885   
+Number of obs: 1000, groups:  plot, 10
+```
+
+This tells us the variance and standard deviation (Std.Dev. = sqrt(Variance)) of our random intercept on `plot` ($\tau^2$) and of the residual variation `Residual` ($\sigma^2$). We are also told how many rows of data we have `Number of obs: 1000` and how many random intercept groups we have `plot, 10`.
+
+```{}
+Fixed effects:
+            Estimate Std. Error t value
+(Intercept) 14.79816    1.43742   10.29
+dbh          0.60566    0.00704   86.03
+```
+
+This tells us our fixed effect estimates and their standard errors. The row with (Intercept) has to do with $\mu_a$, while that with dbh has to do with $b$. 
+Assuming normality, a 95% confidence interval on those coefficients can be obtained with their estimate +/- 1.96 the standard error. In other words approximately estimate +/- 2*SE. 
+
+Visualise the effect using `allEffects` and/or `visreg`.
+
+```{r}
+effects::allEffects(mixed)
+```
+
+```{r}
+plot(effects::allEffects(mixed))
+```
+
+
+```{r}
+visreg::visreg(mixed,xvar='dbh')
+```
+
+
+
+
+
+
+
+2. Longitudinal study on coral reef and GLMM. A survey of a coral reef uses 10 predefined linear transects covered by divers once every week. The response variable of interest is the abundance of a particular species of anemone as a function of water temperature. Counts of anemones are recorded at 20 regular line segments along the transect. The following piece of code will generate a data set with realistic properties according to the above design. Make sure you understand what it is doing. You might want to explain the script to the colleague next to you.
+
+```{r}
+transects <- 10
+data <- NULL
+for (tr in 1:transects){
+  ref <- rnorm(1,0,.5) # random effect (intercept)
+  t <- runif(1, 18,22) + runif(1,-.2,0.2)*1:20 # water temperature gradient
+  ans <- exp(ref -14 + 1.8 * t - 0.045 * t^2) # Anemone gradient (expected response)
+  an <- rpois(20, ans) # Actual observations: counts on 20 segments of the current transect
+  data <- rbind(data,cbind(rep(tr, 20), t, an))
+}
+```
+str(data)
+To try and make sense of the code of others, it is always good to plot and/or run small sections of the code. 
+```{r}
+ref <- rnorm(1,0,.5) # random effect (intercept)
+t <- runif(1, 18,22) + runif(1,-.2,0.2)*1:20 # water temperature gradient
+plot(t,type='l')
+```
+
+```{r}
+ans <- exp(ref -14 + 1.8 * t - 0.045 * t^2) # Anemone gradient (expected response)
+plot(t,log(ans),type='l')
+```
+
+Generate a data set using the anemone code and fit to it the following mixed effects models:
+
+- m1: GLM with temperature
+
+- m2: GLM with quadratic formula in temperature
+
+- m3: GLMM with temperature and random intercept
+
+- m4: GLMM with quadratic temperature and random intercept
+
+Carry out model selection from this set of models. Inspect the temperature effect with `visreg`.
+
+```{r}
+data <- data.frame(Transect=data[,1],Temperature=data[,2],Anemones=data[,3])
+plot(data$Temperature, data$Anemones)
+```
+
+```{r}
+library(lme4)
+m1 <- glm(Anemones ~ Temperature, data=data, family=poisson)
+m2 <- glm(Anemones ~ Temperature + I(Temperature^2), data=data, family=poisson)
+m3 <- glmer(Anemones ~ Temperature + (1 | Transect), data=data, family=poisson)
+m4 <- glmer(Anemones ~ Temperature + I(Temperature^2) + (1 | Transect), data=data, family=poisson)
+AIC(m1,m2,m3,m4)
+```
+
+There seems to be issues of convergence, and the warning message is quite clear in that we should standardize our Temperature covariate. Let's do it then:
+
+```{r}
+data$Temp <- (data$Temperature - mean(data$Temperature))/sd(data$Temperature)
+head(data)
+```
+
+A column Temp has been added to our dataframe.
+
+```{r}
+library(lme4)
+m1 <- glm(Anemones ~ Temp, data=data, family=poisson)
+m2 <- glm(Anemones ~ Temp + I(Temp^2), data=data, family=poisson)
+m3 <- glmer(Anemones ~ Temp + (1 | Transect), data=data, family=poisson)
+m4 <- glmer(Anemones ~ Temp + I(Temp^2) + (1 | Transect), data=data, family=poisson)
+AIC(m1,m2,m3,m4)
+```
+
+The model ranking is the same, and we do no longer get warnings. Let's have a look to the relationship between the number of anemones and water temperature.
+
+```{r}
+visreg::visreg(m4,xvar='Temp')
+```
+
