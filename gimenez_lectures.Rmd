@@ -68,6 +68,103 @@ knitr::include_graphics("img/love_stats_cats.jpg")
 knitr::include_graphics("img/that-moment-when-the-teacher-asks-you-to-introduce-yourself-to-the-class.jpg")
 ```
 
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_002.jpeg")
+```
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_003.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_004.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_005.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_006.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_007.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_008.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_009.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_010.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_012.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_013.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_014.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_015.jpeg")
+```
+
+
+##
+
+```{r echo = FALSE, out.width="90%"}
+knitr::include_graphics("img/ecostat_largecarnivores_light_Page_016.jpeg")
+```
+
+
 
 # Acknowledgments
 
