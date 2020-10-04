@@ -1915,6 +1915,13 @@ legend('topleft',lwd=2,legend=c('with prior info','without prior info'),col=c('r
 
 ## Take-home message: shall I go for frequentist or Bayes?
 
+```{r, echo = FALSE, out.width="60%"}
+knitr::include_graphics("img/wait_mcmc.png")
+```
+
+
+## Take-home message: shall I go for frequentist or Bayes?
+
 * Pros
      + allows \alert{formal use of prior information}
      + error propagation made easy
