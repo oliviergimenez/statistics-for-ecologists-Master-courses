@@ -1262,11 +1262,24 @@ knitr::include_graphics('img/textbooks2.png')
 
 # Bayesian inference 
 
+## Disclaimer
+
+```{r, out.width = '70%',echo=FALSE,fig.align='center'}
+knitr::include_graphics('img/amazing-thomas-bayes-illustration.jpg')    
+```
+
+* Quick and dirty introduction to Bayesian inference
+
+* For more, check out my 7-hour Bayesian workshop <https://github.com/oliviergimenez/Bayesian_Workshop>
+
 ## Introduction
+
 * The Bayesian approach dates back to 18th century to Reverend Thomas Bayes.
-```{r, out.width = '4cm',out.height='3cm',echo=FALSE}
+```{r, out.width = '20%',echo=FALSE,fig.align='center'}
 knitr::include_graphics('img/Thomas_Bayes.png')    
 ```
+
+
 * However, due to practical problems of implementing the Bayesian approach, little advance was made for over two centuries.
 * Recent advances in \alert{computational power} coupled with the development of new methodology have led to a great increase in the application of Bayesian methods within the last two decades.
 
@@ -1473,6 +1486,14 @@ knitr::include_graphics('img/metropolis.png')
 knitr::include_graphics('img/maniac.png')   
 ```
 
+## Animating the Metropolis algorithm - 2D example
+
+[\alert{https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/}](https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/)
+
+## The Markov-chain Monte Carlo Interactive Gallery
+
+[\alert{https://chi-feng.github.io/mcmc-demo/}](https://chi-feng.github.io/mcmc-demo/)
+
 ## Why are MCMC methods so useful?
 
 * MCMC: stochastic algorithm to produce sequence of dependent random numbers (from Markov chain)
@@ -1484,6 +1505,7 @@ knitr::include_graphics('img/maniac.png')
 * Several ways of constructing these chains: Metropolis-Hastings, Gibbs sampler, Metropolis-within-Gibbs, ...
 
 * How to implement them in practice?!
+
 
 ## In practice, when is equilibrium attained?
 
@@ -1497,7 +1519,7 @@ knitr::include_graphics('img/maniac.png')
 
 ## In practice, when is equilibrium attained?
 
-```{r, out.width = '10cm',out.height='6cm',echo=FALSE}
+```{r, out.width = '90%',echo=FALSE}
 knitr::include_graphics('img/mcmc.png')   
 ```
 
@@ -2581,50 +2603,125 @@ knitr::include_graphics('img/textbooks4.png')
 * Measurement that come \alert{in groups}
 
 
+# Your turn
+
+## Question
+
+* Come up with examples of clusters or groups
+
+# Solution
+
+## Clusters might be:
+
+* Classrooms within schools
+* Students within classrooms
+* Chapters within books
+* Individuals within populations
+* Populations within species
+* Trajectories within individuals
+* Fishes within tanks
+* Frogs within ponds
+* PhD applicants in doctoral schools
+* Nations in continents
+* Sex or age are not clusters per se (if we were to sample again, we would take the same levels, e.g. male/female and young/old)
+
+
 ## Why do we need random effects?
+
+* Model the clustering itself.
 
 * Interested in variance components (environmental vs. genetic variance)
 
 * Control for bias due to pseudoreplication (time, space, individual)
 
-## Plant example, universality of the allometric relationship?
+
+## McElreath's explanation of multilevel models
+
+* Fixed-effect models have amnesia.
+
+* Every new cluster (individual, species, classroom) is a new world.
+
+* No information passed among clusters.
+
+* Multilevel models remember and pool information. They have memory.
+
+* Properties of clusters come from a population.
+
+* If previous clusters improve your guess about a new cluster, you want to use pooling.
+
+
+
+## Universality of the allometric relationship?
 
 ```{r, out.width = '7cm',out.height='5cm',fig.align='center',echo=FALSE}
 knitr::include_graphics('img/pdm.png')    
 ```
+* 33 species monitored on the field at CEFE
+* Courtesy of Pr Eleni Kazakou.
 
-Courtesy of  Eleni Kazakou.
-
-## Plant example, universality of the allometric relationship?
+## Inspect the data, for 4 species at random
 ```{r, include=FALSE}
 # On lit le jeu de données à analyser et on le nettoie
 VMG <- read.table("dat/VMG.csv", header=TRUE, dec= ".", sep =";")
 VMG$Sp <- as.factor(VMG$Sp)
 
 # crée crée un vecteur contenant le nb de graines (en log)
-y=log(VMG$NGrTotest)
+y <- log(VMG$NGrTotest)
 
 # crée un vecteur contenant la biomass
-x=VMG$Vm
+x <- VMG$Vm
 
 # crée un vecteur contenant le nom des espèces
-Sp=VMG$Sp
+Sp <- VMG$Sp
 
 # crée un vecteur contenant le numéro des espèces
-species = as.numeric(Sp)
+species <- as.numeric(Sp)
 
 # nombre d'espèces
-nbspecies = length(levels(Sp)) # ou bien length(unique(species))
+nbspecies <- length(levels(Sp)) # ou bien length(unique(species))
 
 # nombre de mesures
-n = length(y)
+n <- length(y)
+
+dat <- data.frame(Biomass = x,
+           nb_grain = y,
+           Species = Sp)
 ```
+
 ```{r, echo = FALSE, out.width = '12cm', out.height = '7cm'}
-# graphical representation
-library(lattice)
-dat <- data.frame(Biomass=x,nb_grain=y,Species=Sp)
-xyplot(nb_grain ~ Biomass | Species,data=dat,xlab='Biomass',ylab='Number of grains')
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
 ```
+
+## Pick 4 other species, at random
+
+```{r, echo = FALSE, out.width = '12cm', out.height = '7cm'}
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
+```
+
+## Yet another 4 other species
+
+```{r, echo = FALSE, out.width = '12cm', out.height = '7cm'}
+dat %>% 
+  filter(Species %in% sample(levels(Sp), 4)) %>%
+  ggplot(aes(y = nb_grain, x = Biomass)) +
+  geom_point() +
+  facet_wrap(~Species, scale = "free") +
+  labs(x = "Biomass",
+       y = "Number of grains")
+```
+
 
 ## Fixed or random?
 
@@ -2737,7 +2834,7 @@ for (i in 2:nbspecies){
 
 ## Back to the plant example
 
-Fit linear \alert{mixed} model, with species as a random effect on the \alert{intercept}
+Fit linear \alert{mixed} model, with species as a random effect on the \alert{intercept}: \alert{partial pooling}
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 library(lme4)
@@ -2747,7 +2844,7 @@ allom.lmm
 
 ## Back to the plant example
 
-Fit linear \alert{mixed} model, with species as random effect on both \alert{intercept} and \alert{slope}
+Fit linear \alert{mixed} model, with species as random effect on both \alert{intercept} and \alert{slope}: \alert{partial pooling}
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
 allom.lmm2 <- lmer (nb_grain ~ Biomass + (1 + Biomass | Species), dat)
@@ -2759,8 +2856,7 @@ allom.lmm2
 ..., with species as random effect on both intercept and slope, \alert{without correlation}
 
 ```{r, echo=TRUE, message=FALSE, warning=FALSE}
-allom.lmm3 <- lmer (nb_grain ~ Biomass + (1 | Species) + 
-                                   (0 + Biomass | Species), dat)
+allom.lmm3 <- lmer(nb_grain ~ Biomass + (1 | Species) + (0 + Biomass | Species), dat)
 allom.lmm3
 ```
 
@@ -2931,11 +3027,13 @@ allom.1 <- jags(allom.data,inits,allom.parameters,
 allom.1
 ```
 
-## Output
+## Output (focus on 4 species only)
+
 
 ```{r, echo=FALSE}
 library(lattice)
-xyplot(y ~ x | Sp,
+dataa <- data.frame(x = x, y = y, Sp = Sp) %>% filter(Sp %in% c("ARIROT","AVEBAR","CONSUM","EROCIC"))
+xyplot(y ~ x | Sp, data = dataa,
        xlab = "Biomass", ylab = "Nb seeds",main="complete pooling (no species effect)",
        panel = function(x, y) {
            panel.xyplot(x, y)
@@ -2945,13 +3043,13 @@ xyplot(y ~ x | Sp,
 
 # Models with mixed effects
 
-## Varying-intercept model
+## Varying-intercept (partial pooling) model
 
 ```{r, fig.align='center',echo=FALSE}
 knitr::include_graphics('img/varyingint.png')    
 ```
 
-## Varying-intercept model
+## Varying-intercept or partial pooling model
 
 Likelihood for measurement $i$ in species $j$:
 $$\text{number.seeds}_{ij} = a_j + b \; \text{biomass}_{ij} + \epsilon_{ij}$$
@@ -3003,16 +3101,16 @@ allom.2 <- jags(allom.data,
 allom.2
 
 ## graph (correction BUG 2015)
-acoef.sp = allom.2$BUGSoutput$summary[1:33,1]
-bcoef = allom.2$BUGSoutput$summary[34,1]
+acoef.sp <- allom.2$BUGSoutput$summary[1:33,1]
+bcoef <- allom.2$BUGSoutput$summary[34,1]
 
 # varying-intercept predicted values
-yfit = rep(0,length=n)
-for (k in 1:n){yfit[k] = acoef.sp[species[k]] + bcoef * x[k]}
+yfit <- rep(0,length=n)
+for (k in 1:n){yfit[k] <- acoef.sp[species[k]] + bcoef * x[k]}
 
 # pooling model (no species effect) predicted values
-ylinear = rep(0,length=n)
-for (k in 1:n){ylinear[k] = 4.63739 + 0.19660 * x[k]}
+ylinear <- rep(0,length=n)
+for (k in 1:n){ylinear[k] <- 4.63739 + 0.19660 * x[k]}
 
 ## define function to fit observed and predicted values in species-specific panels
 panelfun2 <-
@@ -3030,14 +3128,17 @@ hat2 <- ylinear # pooling model (no species effect) fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying-intercept}
 
-```{r, echo=FALSE}
-# build a multipanel plot
-xyplot(y ~ x | Sp, panel=panelfun2,
-       xlab="biomass",
-       ylab="nb graines",
-       key = list(text = list(c("varying-intercept", "pooling")),
-       lines = list(lwd = 3, col = c("green", "red"),
-       type = c("l", "l"))))
+```{r, echo=FALSE, out.width="70%"}
+dataa <- data.frame(x = x, y = y, Sp = Sp) 
+# png("img/xyplot1.png", height = 7, width = 9, unit = "in", res = 300)
+# xyplot(y ~ x | Sp, data = dataa, panel = panelfun2,
+#        xlab="biomass",
+#        ylab="nb graines",
+#        key = list(text = list(c("varying-intercept", "pooling")),
+#        lines = list(lwd = 3, col = c("green", "red"),
+#        type = c("l", "l"))))
+# dev.off()
+knitr::include_graphics('img/xyplot1.png')
 ```
 
 ## Varying intercept, varying slope model
@@ -3121,13 +3222,16 @@ hat3 <- yfit2 # varying-intercept varying-slope fit
 
 ## Compare \textcolor{red}{complete pooling} vs \textcolor{green}{varying intercept} vs \textcolor{blue}{varying intercept and slope}
 
-```{r, echo=FALSE, out.width = '12cm',out.height='7cm'}
-xyplot(y ~ x | Sp, panel=panelfun2,
-       xlab="biomass",
-       ylab="nb graines",
-       key = list(text = list(c("varying-intercept/slope", "varying-intercept","pooling")),
-       lines = list(lwd = 3, col = c("blue","green","red"),
-       type = c("l", "l", "l"))))
+```{r, echo=FALSE, out.width="70%"}
+# png("img/xyplot2.png", height = 7, width = 9, unit = "in", res = 300)
+# xyplot(y ~ x | Sp, panel=panelfun2,
+#        xlab="biomass",
+#        ylab="nb graines",
+#        key = list(text = list(c("varying-intercept/slope", "varying-intercept","pooling")),
+#        lines = list(lwd = 3, col = c("blue","green","red"),
+#        type = c("l", "l", "l"))))
+# dev.off()
+knitr::include_graphics('img/xyplot2.png')
 ```
 
 
@@ -3311,19 +3415,14 @@ legend(40,600,c('GLMM','GAMM'),col=c('red','blue'),lty=1,lwd=3)
 
 ## Mixed models in a nutshell
 
-- We can \alert{generalize to a wider population}
-      - e.g. can say something about the allometry relationship that we might expect in the population of species from which our sample was selected (plant example)
-      
-- \alert{Fewer parameters} are needed than separate linear regressions per species
-      - we only needed few additional parameters – e.g. the variance to allow the intercepts to vary from species to species. By contrast, the standard species by species approach would require 33 additional parameters (plant example)
+* \alert{Shrinkage via pooling is desirable}. The no-pooling model overstates variation among clusters and makes the
+individual clusters look more different than they are (overfitting). The complete-pooling model simply ignores the variation among clusters (underfitting).
 
-## Mixed models in a nutshell
+* We can \alert{generalize to a wider population}. Is there an allometry relationship between number of seeds and biomass?
 
-- Information can be \alert{shared between groups}
-      - By assuming that the random effects come from a common distribution, a multilevel model can share information between groups. This can improve the precision of predictions for species / individual that have little data
+* We may consider \alert{varying slopes}. We'd need to deal with correlations between intercept and slope random effects. Open a whole new world with spatial (or time) autocorrelation, phylogenetic regressions, quantitative genetics, network models.
 
-- Possible extension to the \alert{inclusion of predictors at the group level}
-      - e.g. if our data included say functional traits for species (herbaceous), we could include a term in the species level model to describe the difference in number of seeds according to functional characteristics (plant example)
+* We may \alert{include predictors at the cluster level}. Imagine we know something about functional traits, and wish to determine whether some species-to-species variation in the allometry relationship is explained by these traits. 
 
 ## Textbooks
 
