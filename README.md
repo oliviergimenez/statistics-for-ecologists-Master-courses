@@ -37,5 +37,8 @@ This work is licensed under a
     - On Bayesian analyses, McElreath lectures and videos <https://github.com/rmcelreath/statrethinking_winter2019> 
 * Include more ecological examples, and maybe use just one or two examples throughout
 * Consider an example mixing continuous and discrete explanatory variables
-* Illustrate how to report results (i) have a look to recent papers in the journal you’re targeting, ii) check out Zuur's books, read <http://bit.ly/2v9dAI8>)
+* Illustrate how to report results
+    - Have a look to recent papers in the journal you’re targeting
+    - Check out Zuur's books
+    - Read <http://bit.ly/2v9dAI8>)
 * Introduce the tidyverse. Or refer to some material I wrote <https://github.com/oliviergimenez/intro_tidyverse> 
