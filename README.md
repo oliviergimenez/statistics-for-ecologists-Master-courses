@@ -40,5 +40,5 @@ This work is licensed under a
 * Illustrate how to report results
     - Have a look to recent papers in the journal you’re targeting
     - Check out Zuur's books
-    - Read <http://bit.ly/2v9dAI8>)
+    - Read <http://bit.ly/2v9dAI8>
 * Introduce the tidyverse. Or refer to some material I wrote <https://github.com/oliviergimenez/intro_tidyverse> 
