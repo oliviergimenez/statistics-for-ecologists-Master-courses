@@ -180,7 +180,7 @@ knitr::include_graphics("img/ecostat_largecarnivores_light_Page_016.jpeg")
 * I also used `R Markdown` to write reproducible documents (slides/exercises)
 * All material is available on GitHub <https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses>
 * Check out the files `gimenez_lectures.R` and `gimenez_practicals.R`
-* You will need the following `R` packages: `arm`, `bbmle`, `broom`, `dplyr`, `effects`, `lme4`, `mgcv`, `MuMIn`, `R2jags`, `tibble`, `visreg`
+* You will need the following `R` packages: `arm`, `bbmle`, `broom`, `tidyverse`, `effects`, `visreg`, `lme4`, `MuMIn`, `R2jags`
 
 
 ## On our plate 
@@ -387,8 +387,8 @@ rbinom(100,10,0.8) %>%
 ## Playing around with probabilities 
 \begin{itemize}[<+- | alert@+>]
 \item Let's say $X \sim \text{Bin}(N=10,p=0.5)$ is a random variable counting the number of males
-\item What is the probability of having at most 2 males?
-  \item $P(X \leq 2) = P(X=0) + P(X=1)$
+\item What is the probability of having at most 1 male?
+  \item $P(X \leq 1) = P(X=0) + P(X=1)$
   \item How to compute this in R?
   \item dbinom(x=0,size=10,prob=0.5) + dbinom(x=1,size=10,prob=0.5)
 \end{itemize}
@@ -735,7 +735,7 @@ The *maximum* of the likelihood is at value $0.3$
   
 + Trial and error (not efficient!)
 + Compute the maximum of a function by hand (rarely doable in practice)
-+ An iterative optimization algorithm: `?optimize` ($1$ parameter) and `?optim` ($> 1$ parameter) in `R`
++ An iterative optimization algorithm: Check out `?optim` function in `R`
 
 ## \alert{By hand}: compute MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
 
@@ -754,9 +754,10 @@ Here, the MLE is the proportion of observed successes
 ## \alert{Using a computer}: MLE of $p$ from $Y \sim \text{Bin}(N=10,p)$ with $k=3$ successes
 
 ```{r,collapse=TRUE}
-lik.fun <- function(parameter) dbinom(x=3, size=10, prob=parameter)
-# ?optimize
-optimize(lik.fun,c(0,1),maximum=TRUE)
+lik.fun <- function(parameter) -dbinom(x=3, size=10, prob=parameter)
+# ?optim (by default, minimize)
+init <- 0.5
+optim(init, lik.fun)
 ```
 
 Use `optim` when the number of parameters is $> 1$.
@@ -1301,7 +1302,8 @@ Where to go from there?! \alert{Multimodel inference}
 
 * Akaike weight $w_i$ for model $i$ gives the probability that model $i$ is the best model 
 
-$$w_i = {{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}\over{\displaystyle{\sum_{n=1}^N{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}}}}$$
+$$w_i = {{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}\over{\displaystyle{\sum_{i=1}^N{\exp\left(-{{1}\over{2}}\Delta \text{AIC}_i\right)}}}}$$ 
+
 
 
 
