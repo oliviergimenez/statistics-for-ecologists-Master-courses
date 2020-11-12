@@ -11,17 +11,15 @@ You will find here the material for a course I give every year to Master student
 * Generalized Additive Models GAMs (245-247)
 * Mixed Effect GLMMs and GAMMs (248-306)
 
-### Videos (in French)
-
-* Lecture 1 covering slides 1-140 [here](https://mycore.core-cloud.net/index.php/s/QjElfy9fHIVILVB)
-* Lecture 2 covering slides 140-180 [here](https://mycore.core-cloud.net/index.php/s/1ovfAMPVcmqtI1l)
-* Lecture 3 covering slides 180-245 [here](https://mycore.core-cloud.net/index.php/s/nV8aj2egZmoNsdJ)
-* Lecture 4 covering slides 245-305 [here](https://mycore.core-cloud.net/index.php/s/nOS5P1Zmz0Kut0k)
-
 ### How to use this repo?
 
 * The PDF of the lecture slides can be downloaded [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_lectures.pdf) 
 * The practicals are [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical.pdf) and the solutions [there](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical_with_solutions.pdf)
+* The videos are also available (in French):
+    * Lecture 1 covering slides 1-140 [here](https://mycore.core-cloud.net/index.php/s/QjElfy9fHIVILVB)
+    * Lecture 2 covering slides 140-180 [here](https://mycore.core-cloud.net/index.php/s/1ovfAMPVcmqtI1l)
+    * Lecture 3 covering slides 180-245 [here](https://mycore.core-cloud.net/index.php/s/nV8aj2egZmoNsdJ)
+    * Lecture 4 covering slides 245-305 [here](https://mycore.core-cloud.net/index.php/s/nOS5P1Zmz0Kut0k)
 * The `R` codes I use in the lectures and the practicals are also provided [here](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_lectures.R) and [there](https://github.com/oliviergimenez/statistics-for-ecologists-Master-courses/blob/main/gimenez_practical_with_solutions.R) respectively
 * To download the whole repo on your computer, click on the `Code` green button at the top right of the page and choose `Download ZIP`
 * Alternatively, click on same green button to create a copy of the repo within your own GitHub account (clone)
