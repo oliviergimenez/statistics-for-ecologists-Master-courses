@@ -4,12 +4,19 @@ You will find here the material for a course I give every year to Master student
 
 ### Topics covered
 
-* Distributions and likelihoods 
-* Hypothesis testing and multimodel inference 
-* Introduction to Bayesian inference 
-* Generalized Linear Models (GLMs) 
-* Generalized Additive Models (GAMs) 
-* Mixed Effect  (GLMMs and GAMMs)
+* Distributions (22-59) and likelihoods (60-84)
+* Hypothesis testing (85-106) and multimodel inference (107-125)
+* Introduction to Bayesian inference (126-179)
+* Generalized Linear Models GLMs (180-244)
+* Generalized Additive Models GAMs (245-247)
+* Mixed Effect GLMMs and GAMMs (248-306)
+
+### Videos (in French)
+
+* Lecture 1 covering slides 1-140 [here](https://mycore.core-cloud.net/index.php/s/QjElfy9fHIVILVB)
+* Lecture 2 covering slides 140-180 [here](https://mycore.core-cloud.net/index.php/s/1ovfAMPVcmqtI1l)
+* Lecture 3 covering slides 180-245 [here](https://mycore.core-cloud.net/index.php/s/nV8aj2egZmoNsdJ)
+* Lecture 4 covering slides 245-305 [here](https://mycore.core-cloud.net/index.php/s/nOS5P1Zmz0Kut0k)
 
 ### How to use this repo?
 
