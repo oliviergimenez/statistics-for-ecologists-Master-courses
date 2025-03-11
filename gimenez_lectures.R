@@ -1641,9 +1641,13 @@ nb.iterations <- 2500
 ## -------------------------------------------------------------------------------------------------------
 # load R2jags to run Jags through R
 library(R2jags)
-reglogcig.sample <- jags(datax,inits,parameters,n.iter=nb.iterations,
-                         model.file="reglogistique.txt",
-                         n.chains=2,n.burnin=nb.burnin)
+reglogcig.sample <- jags(data = datax, 
+								inits = inits,
+								parameters.to.save = parameters,
+								n.iter = nb.iterations,
+								model.file = "reglogistique.txt",
+								n.chains = 2,
+								n.burnin = nb.burnin)
 
 #' 
 #' ## Display parameter estimates
@@ -3082,14 +3086,18 @@ model <- paste("
 model{
   for (k in 1:n){
     y[k] ~ dnorm (y.hat[k], tau.y)
-    y.hat[k] <- a[species[k]] + b *x[k]}
+    y.hat[k] <- a[species[k]] + b *x[k]
+  }
+  for (j in 1:nbspecies){ 
+    a[j] ~ dnorm(mu.a, tau.a)
+  }
+
   tau.y <- pow(sigma.y, -2)
   sigma.y ~ dunif (0, 100)
-  for (j in 1:nbspecies){ 
-    a[j] ~ dnorm(mu.a, tau.a)}
-  mu.a ~ dnorm (0, .001)
   tau.a <- pow(sigma.a, -2)
   sigma.a ~ dunif (0, 100)
+
+  mu.a ~ dnorm (0, .001)
   b ~ dnorm (0, .001)    
 }
 ")

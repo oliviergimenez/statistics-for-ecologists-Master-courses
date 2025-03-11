@@ -1620,14 +1620,6 @@ knitr::include_graphics('img/metropolis.png')
 knitr::include_graphics('img/maniac.png')   
 ```
 
-## Animating the Metropolis algorithm - 2D example
-
-[\alert{https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/}](https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/)
-
-## The Markov-chain Monte Carlo Interactive Gallery
-
-[\alert{https://chi-feng.github.io/mcmc-demo/}](https://chi-feng.github.io/mcmc-demo/)
-
 ## Why are MCMC methods so useful?
 
 * MCMC: stochastic algorithm to produce sequence of dependent random numbers (from Markov chain)
@@ -1640,8 +1632,15 @@ knitr::include_graphics('img/maniac.png')
 
 * How to implement them in practice?!
 
+## Animating the Metropolis algorithm - 2D example
 
-## In practice, when is equilibrium attained?
+[\alert{https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/}](https://mbjoseph.github.io/posts/2018-12-25-animating-the-metropolis-algorithm/)
+
+## The Markov-chain Monte Carlo Interactive Gallery
+
+[\alert{https://chi-feng.github.io/mcmc-demo/}](https://chi-feng.github.io/mcmc-demo/)
+
+## When is equilibrium attained?
 
 * Run multiple chains from arbitrary starting places (inits)
 
@@ -1676,15 +1675,15 @@ knitr::include_graphics('img/plummer.png')
 
 ## Let us read in the data
 ```{r}
-nbsuccess = c(151,105,73,107,113,87,77,108,118,122,112,120,122,89,69,71,
+nbsuccess <- c(151,105,73,107,113,87,77,108,118,122,112,120,122,89,69,71,
               53,41,53,31,35,14,18)
-nbpairs = c(173,164,103,113,122,112,98,121,132,136,133,137,145,117,90,80,
+nbpairs <- c(173,164,103,113,122,112,98,121,132,136,133,137,145,117,90,80,
             67,54,58,39,42,23,23)
-temp = c(15.1,13.3,15.3,13.3,14.6,15.6,13.1,13.1,15.0,11.7,15.3,14.4,14.4,
+temp <- c(15.1,13.3,15.3,13.3,14.6,15.6,13.1,13.1,15.0,11.7,15.3,14.4,14.4,
          12.7,11.7,11.9,15.9,13.4,14.0,13.9,12.9,15.1,13.0)
-rain = c(67,52,88,61,32,36,72,43,92,32,86,28,57,55,66,26,28,96,48,90,86,
+rain <- c(67,52,88,61,32,36,72,43,92,32,86,28,57,55,66,26,28,96,48,90,86,
            78,87)
-datax = list(N=23,nbsuccess = nbsuccess,nbpairs = nbpairs, 
+datax <- list(N=23,nbsuccess = nbsuccess,nbpairs = nbpairs, 
              temp = temp,rain = rain)
 ```
 
@@ -1795,6 +1794,12 @@ R2jags::traceplot(reglogcig.sample, varname=c('b.temp'), ask = FALSE)
 res <- as.mcmc(reglogcig.sample) # convert outputs in a list
 res <- rbind(res[[1]],res[[2]]) # put two MCMC lists on top of each other
 head(res)
+
+
+hist(res[,2])
+abline(v = 0, col = 'red' , lwd = 3)
+
+
 ```
 
 ## Compute a posteriori Pr(rain < 0)
@@ -2094,8 +2099,7 @@ knitr::include_graphics('img/textbook6.png')
 Read `titanic_long.csv` dataset.
 
 ```{r read_titanic, collapse=T}
-titanic <- read.csv("dat/titanic_long.csv") %>%
-  mutate(across(where(is.character), as_factor))
+titanic <- read.csv("dat/titanic_long.csv")
 head(titanic)
 ```
 
@@ -2857,7 +2861,7 @@ dat %>%
        y = "Number of grains")
 ```
 
-## Yet another 4 other species
+## Yet another 4 species
 
 ```{r, echo = FALSE, out.width = '12cm', out.height = '7cm'}
 dat %>% 
